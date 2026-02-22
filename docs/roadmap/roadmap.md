@@ -112,20 +112,29 @@ These libraries will be introduced progressively throughout the project.
 # Repository Structure
 
 ```
-project-root/
+log-analysis-pipeline/
+│
+├── config/
+│   └── config.yaml
 │
 ├── data/
+│   └── raw/
+│
+├── src/
+│   └── log_pipeline/
+│
 ├── scripts/
+│
 ├── output/
+│
+├── tests/
+│
 ├── docs/
-│   ├── roadmap/
-│       ├── month1/
-│       |   └── month1.md
-│       ├── month2/
-│       ├── month3/
-│       ├── month4/
-│       ├── month5/
-│       └── month6/
+│
+├── main.py
+├── requirements.txt
+├── .gitignore
+└── README.md
 ```
 
 ---

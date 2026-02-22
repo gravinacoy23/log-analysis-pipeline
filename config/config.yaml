@@ -1,0 +1,18 @@
+# Log Analysis Pipeline Configuration
+
+paths:
+  input_log: data/raw/sample.log
+  output_dir: output/
+
+log_format:
+  timestamp_format: "%Y-%m-%d %H:%M:%S"
+
+analysis:
+  error_keywords:
+    - ERROR
+    - WARNING
+    - CRITICAL
+
+output:
+  save_summary: true
+  save_errors: true
