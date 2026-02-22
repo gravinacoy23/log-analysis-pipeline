@@ -13,6 +13,7 @@ This project is a 6-month learning journey focused on:
 Build a log analysis pipeline that evolves from simple scripts to a cloud-based data workflow.
 
 ## Structure
+```
 log-analysis-pipeline/
 │
 ├── config/
@@ -36,6 +37,7 @@ log-analysis-pipeline/
 ├── requirements.txt
 ├── .gitignore
 └── README.md
+```
 
 ## Progress
 
