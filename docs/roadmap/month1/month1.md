@@ -141,6 +141,3 @@ By the end of Month 1, you should be able to:
 * Structure data
 * Load logs into pandas
 * Understand the log pipeline basics
-
-
-*test|
