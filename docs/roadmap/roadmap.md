@@ -1,313 +1,174 @@
-# Data Pipeline to ML Engineering Roadmap (8 Months)
+# Data Science → Cloud → ML Engineering Roadmap (8--10 Months)
 
-## Vision
+## Priority Order
 
-Build a production-oriented data pipeline that evolves into a
-cloud-native ML-ready system.
+1.  Become strong in Data Science
+2.  Become strong in Cloud Engineering fundamentals
+3.  Build solid Machine Learning foundations
+4.  Master Git and documentation discipline
 
-Primary Priorities (in order):
-
-1.  Strong Data Science + Linux foundations
-2.  Solid ML foundations (TensorFlow-ready)
-3.  Cloud-native application architecture
-4.  Professional Git & documentation discipline
-
-This roadmap keeps the original structure but strengthens: -
-Reproducibility - Docker usage (early introduction) - ML foundations -
-Cloud-native mindset
+This roadmap reflects that order strictly.
 
 ------------------------------------------------------------------------
 
-# Phase 1 (Months 1--3): Data + Linux Foundations
+# Phase 1 (Months 1--4): Strong Data Science Foundations
 
 ## Global Goal
 
-Build a robust log-analysis pipeline locally with automation,
-visualization, and clean project structure.
+Develop deep comfort with data manipulation, analysis, and structured
+problem solving using Python and Linux.
 
 ------------------------------------------------------------------------
 
-# Month 1 -- Foundations
+## Month 1 -- Python + Log Parsing Foundations
 
-## Focus
+Focus: - Python fundamentals (loops, functions, dicts, exceptions) -
+Modular project structure - Synthetic log generation (ML-ready design) -
+Parsing structured logs - Intro to pandas - Basic matplotlib
+visualization
 
--   Python file handling
--   Log parsing basics
--   Linux navigation
--   Git workflow discipline
--   Docker introduction
--   Basic statistics
--   Pandas (intro)
--   NumPy (intro)
--   Matplotlib (intro)
-
-## Technical Skills
-
-### Python
-
--   File reading (txt, csv)
--   Lists, dictionaries
--   Basic parsing
--   pathlib
--   csv module
--   json handling
-
-### Data
-
--   CSV format
--   Basic descriptive statistics
--   Intro to pandas DataFrames
--   Intro to numpy arrays
-
-### Visualization
-
--   matplotlib basics
--   Simple plots (counts, distributions)
-
-### Linux
-
--   cd, ls, mkdir, cp, mv
--   cat, grep
--   File permissions basics
-
-### Docker (New -- Early Exposure)
-
--   What containers are
--   Write first Dockerfile
--   Run Python script inside container
--   Understand environment isolation
-
-## Deliverable
-
--   Script that parses generated logs
--   Basic statistical summary
--   At least 2 simple plots using matplotlib
--   Project runs inside Docker
--   Documentation updated
--   Code pushed to GitHub
+Deliverables: - Modular log pipeline - Structured dictionaries from
+logs - DataFrame creation - Bar plot (log counts) - Clean repo
+structure - Frequent commits + documentation
 
 ------------------------------------------------------------------------
 
-# Month 2 -- Data Analysis & Visualization
+## Month 2 -- Data Analysis Deep Dive
 
-## Focus
+Focus: - Pandas (intermediate → advanced) - Grouping & aggregation -
+Time-series handling - Data cleaning techniques - Handling missing /
+malformed data - Matplotlib deeper usage - Seaborn introduction
 
--   Pandas (intermediate)
--   Data cleaning
--   Aggregations
--   Grouping
--   Time-based analysis
--   Matplotlib (deeper)
--   Seaborn (introduction)
-
-## Technical Skills
-
-### Data Manipulation
-
--   Filtering
--   GroupBy
--   Aggregations
--   Merging datasets
--   Handling missing values
-
-### Visualization
-
--   matplotlib advanced usage
--   seaborn basics
--   Distribution plots
--   Time-series plots
-
-### Engineering Discipline
-
--   Config file (config.yaml)
--   Separate raw/processed data
--   Modular code structure
-
-## Deliverable
-
--   Log summaries
--   Visual reports (matplotlib + seaborn)
--   Clean modular structure
--   Dockerized analysis environment
+Deliverables: - Analytical reports from logs - Multiple visualizations -
+Clean feature extraction - Refactored modular code
 
 ------------------------------------------------------------------------
 
-# Month 3 -- Realistic Logs + Automation
+## Month 3 -- Data Engineering Thinking
 
-## Focus
+Focus: - Feature engineering from logs - Dataset creation for ML -
+Reproducible transformations - Config-driven pipeline - Linux automation
+(cron) - Bash basics
 
--   Parsing complex logs
--   Regex
--   Multiple file processing
--   Automation
--   Linux integration
--   Cron jobs
--   Bash scripting
--   subprocess in Python
-
-## Technical Skills
-
-### Parsing
-
--   Regex patterns
--   Error handling
--   Multi-file iteration
-
-### Linux Integration
-
--   Cron
--   chmod
--   Pipes and redirection
-
-### Automation
-
--   Automated execution
--   Logging output files
--   Structured output folder
-
-## Deliverable
-
--   Automated local pipeline
--   Multi-file log processing
--   Scheduled job (cron)
--   Visual reports generated automatically
+Deliverables: - Clean feature dataset - Automated local pipeline -
+Scheduled execution - Documented transformations
 
 ------------------------------------------------------------------------
 
-# Phase 2 (Months 4--5): ML Foundations
+## Month 4 -- Statistical Foundations for ML
+
+Focus: - Probability basics - Distributions - Correlation vs causation -
+Train/test split - Bias vs variance - Evaluation metrics (accuracy,
+precision, recall, F1)
+
+Deliverables: - Statistical analysis report - Proper dataset splitting -
+Documented EDA
+
+------------------------------------------------------------------------
+
+# Phase 2 (Months 5--7): Cloud Engineering Foundations
 
 ## Goal
 
-Build ML knowledge on top of your structured pipeline.
+Learn how to move data systems to cloud properly.
 
 ------------------------------------------------------------------------
 
-# Month 4 -- ML Basics
+## Month 5 -- AWS Core
 
-## Focus
+Focus: - S3 - EC2 - IAM - AWS CLI - Moving data to cloud
 
--   Feature engineering
--   Train/test split
--   Linear regression
--   Logistic regression
--   Evaluation metrics
--   Overfitting vs underfitting
-
-## Technical Skills
-
--   Implement basic model manually with NumPy
--   Use scikit-learn
--   Model evaluation metrics
--   Save model artifacts
-
-## Deliverable
-
--   ML model trained on processed logs
--   Evaluation report
--   Model saved and versioned
--   Docker image including model
+Deliverables: - Logs stored in S3 - Pipeline running on EC2 - Secure IAM
+configuration
 
 ------------------------------------------------------------------------
 
-# Month 5 -- Toward TensorFlow
+## Month 6 -- Cloud Structure & Automation
 
-## Focus
+Focus: - Environment separation (local vs cloud) - CloudWatch intro -
+Dockerizing pipeline properly - Reproducible deployments
 
--   Neural network fundamentals
--   Intro to TensorFlow
--   Data pipelines for training
--   Reproducible experiments
-
-## Technical Skills
-
--   TensorFlow basics
--   Simple feedforward network
--   Training loop understanding
--   Model serialization
--   Structured experiment logging
-
-## Deliverable
-
--   Basic TensorFlow model
--   Training pipeline
--   Versioned experiments
--   Clear documentation
+Deliverables: - Dockerized pipeline - Cloud execution reproducible -
+Basic monitoring
 
 ------------------------------------------------------------------------
 
-# Phase 3 (Months 6--8): Cloud-Native Application
+## Month 7 -- Cloud-Native Thinking
+
+Focus: - Stateless processing mindset - Object storage principles -
+Modular deployments - Reproducibility in cloud
+
+Deliverables: - Clean cloud-native log pipeline - Portfolio-ready
+repository
+
+------------------------------------------------------------------------
+
+# Phase 3 (Months 8--10): Machine Learning Foundations
 
 ## Goal
 
-Move the pipeline + ML model to AWS in a cloud-native way.
+Build ML on top of strong Data + Cloud foundations.
 
 ------------------------------------------------------------------------
 
-# Month 6 -- AWS Foundations
+## Month 8 -- Classical ML
 
-## Focus
+Focus: - Linear regression (from scratch + sklearn) - Logistic
+regression - Feature scaling - Model evaluation - Overfitting vs
+underfitting
 
--   S3
--   EC2
--   IAM
--   AWS CLI
--   CloudWatch (intro)
-
-## Deliverable
-
--   Logs stored in S3
--   Processing running on EC2
--   Results stored in S3
--   Basic monitoring
+Deliverables: - Trained model on log dataset - Evaluation metrics -
+Versioned model artifacts
 
 ------------------------------------------------------------------------
 
-# Month 7 -- Cloud Automation
+## Month 9 -- Structured ML Pipeline
 
-## Focus
+Focus: - Reproducible training - Experiment tracking (manual logging
+first) - Hyperparameter testing - Saving/loading models
 
--   Automated deployments mindset
--   Environment separation (local vs cloud)
--   Secure IAM roles
--   Logging & monitoring
-
-## Deliverable
-
--   Automated cloud processing
--   Proper IAM permissions
--   Logs observable in CloudWatch
+Deliverables: - Clean ML training pipeline - Structured experiment
+results
 
 ------------------------------------------------------------------------
 
-# Month 8 -- Cloud-Native ML Pipeline
+## Month 10 -- Introduction to TensorFlow
 
-## Focus
+Focus: - Neural network fundamentals - Loss functions - Gradients
+(conceptual understanding) - Simple feedforward network - Model
+serialization
 
--   Stateless processing
--   Reproducibility
--   Model inference in cloud
--   Ready for container orchestration (future Docker/Kubernetes phase)
-
-## Deliverable
-
--   Cloud-native log + ML pipeline
--   Fully Dockerized system
--   Clean documentation
--   Portfolio-ready repository
+Deliverables: - Basic TensorFlow model - Documented training process -
+Reproducible setup
 
 ------------------------------------------------------------------------
 
-# Definition of Done
+# Git & Documentation (Continuous Requirement)
 
-A task is complete when:
+Every week:
 
--   Code runs correctly
--   Docker build works
+-   Small commits
+-   Clear commit messages
+-   Updated docs/
+-   README improvements
+-   Reflection notes
+
+Definition of Done:
+
+-   Code runs
+-   Results reproducible
+-   Docker build works (when applicable)
 -   Documentation updated
 -   Commit pushed
--   Feature reproducible
 
 ------------------------------------------------------------------------
 
-Progress over perfection.
+# Strategic Outcome
+
+After completion you should:
+
+-   Be strong in Data Science fundamentals
+-   Understand Cloud architecture basics
+-   Have solid ML foundations
+-   Have a professional Git-based portfolio
 
