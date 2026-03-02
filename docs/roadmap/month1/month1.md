@@ -1,143 +1,143 @@
-# Month 1 – Python Foundations for Log Analysis
+# Month 1 -- Python Foundations for Log Analysis (Improved)
 
-## Goals
+## Primary Goal
 
-* Strengthen Python fundamentals
-* Learn file handling in Python
-* Parse log files
-* Prepare data for analysis
-* Begin working with pandas
+Build a structured and reproducible log parsing system with:
 
----
+-   Clean project architecture
+-   Strong Python fundamentals
+-   Introductory pandas usage
+-   Basic visualization (matplotlib)
+-   First exposure to Docker
 
-## Key Concepts
+------------------------------------------------------------------------
 
-### Python
-
-* Variables
-* Loops
-* Functions
-* Lists and dictionaries
-* Exception handling
-
-### File Handling
-
-* Reading text files
-* Writing files
-* Working with directories
-* Processing multiple files
-
-### Logs
-
-* Log structure
-* Timestamps
-* Log levels (INFO, WARNING, ERROR)
-* Messages
-
----
-
-## Data Format
-
-Logs will be analyzed directly using Python.
-
-We will work with:
-
-* .log files
-* .txt files
-* Structured text logs
-
-Excel is NOT required for this project.
-
----
-
-## Tools
-
-* Python
-* pandas
-* Git
-* Linux terminal
-
----
-
-## Practice
-
-You will:
-
-* Generate simple log files
-* Read log files with Python
-* Parse log lines
-* Extract fields
-* Store structured data
-* Load logs into pandas
-
----
-
-## Example Log Format
-
-Example logs may look like:
-
+# Project Structure (Required From Day 1)
 ```
-2026-03-01 10:15:23 INFO User login successful
-2026-03-01 10:16:02 ERROR Database connection failed
-2026-03-01 10:16:45 WARNING High memory usage
+log-analysis-pipeline/
+│
+├── config/
+│   └── config.yaml
+│
+├── data/
+│   └── raw/
+│
+├── src/
+│   └── log_pipeline/
+│
+├── scripts/
+│
+├── output/
+│
+├── tests/
+│
+├── docs/
+│
+├── main.py
+├── requirements.txt
+├── .gitignore
+└── README.md
 ```
 
----
+------------------------------------------------------------------------
 
-## Deliverables
+# Technical Focus
 
-By the end of Month 1 you should have:
+## Python Foundations
 
-* A script that reads log files
-* A script that parses logs
-* A script that structures logs
-* A pandas DataFrame from logs
+-   Variables
+-   Loops
+-   Functions
+-   Lists and dictionaries
+-   Exception handling
+-   Modular code design
 
----
+## File Handling
 
-## Skills Developed
+-   Reading text files
+-   Writing files
+-   Working with directories
+-   Processing multiple files
 
-* Python scripting
-* File handling
-* Debugging
-* Data preparation
-* Basic pandas usage
+## Log Concepts
 
----
+-   Log structure
+-   Timestamps
+-   Log levels (INFO, WARNING, ERROR)
+-   Messages
 
-## Git Requirements
+------------------------------------------------------------------------
 
-Every session should include:
+# Log Generation (New Requirement)
 
-* At least one commit
-* Clear commit messages
-* Pushing to GitHub
+Instead of manually writing logs, you will:
 
----
+-   Create a Python script: `log_generator.py`
+-   Generate realistic synthetic logs
+-   Store logs inside `data/raw/`
+-   Include variability in:
+    -   Log levels
+    -   Timestamps
+    -   Messages
+    -   Random errors
 
-## Documentation Requirements
+This simulates real-world unpredictability.
 
-Document:
+------------------------------------------------------------------------
 
-* What you built
-* What you learned
-* Problems encountered
-* Solutions found
+# Data Handling
 
-Documentation should be saved in:
+-   Parse logs into dictionaries
+-   Convert structured logs into pandas DataFrame
+-   Compute basic counts per log level
 
-```
-docs/
-```
+------------------------------------------------------------------------
 
----
+# Visualization (Intro)
 
-## End of Month Goal
+Using matplotlib:
 
-By the end of Month 1, you should be able to:
+-   Create at least one bar plot:
+    -   Count of logs by level (INFO/WARNING/ERROR)
 
-* Read log files
-* Parse logs
-* Structure data
-* Load logs into pandas
-* Understand the log pipeline basics
+Save plots inside `output/`
+
+------------------------------------------------------------------------
+
+# Docker (Intro Exposure)
+
+By the end of Month 1:
+
+-   Create a simple Dockerfile
+-   Run the pipeline inside the container
+-   Understand environment isolation
+
+No complex Docker setup required yet.
+
+------------------------------------------------------------------------
+
+# Deliverables
+
+By the end of Month 1 you must have:
+
+-   Structured modular project
+-   Log generator script
+-   Reader and parser modules
+-   DataFrame creation
+-   Basic matplotlib visualization
+-   Dockerfile that runs the pipeline
+-   Clean documentation
+-   Frequent commits
+
+------------------------------------------------------------------------
+
+# Definition of Done
+
+A task is complete when:
+
+-   Code runs
+-   Structure is clean
+-   Documentation updated
+-   Commit pushed
+-   Feature reproducible
+

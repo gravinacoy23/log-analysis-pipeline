@@ -1,746 +1,313 @@
-# Data Pipeline Learning Roadmap (6 Months)
+# Data Pipeline to ML Engineering Roadmap (8 Months)
 
-## Overview
+## Vision
 
-This project is a 6‑month learning journey focused on building practical skills in:
+Build a production-oriented data pipeline that evolves into a
+cloud-native ML-ready system.
 
-* Python
-* Data Analysis
-* Linux
-* Git & Documentation
-* Cloud (AWS)
+Primary Priorities (in order):
 
-The project will revolve around building a **log analysis data pipeline** that evolves over time from simple local scripts into a cloud‑deployed system.
+1.  Strong Data Science + Linux foundations
+2.  Solid ML foundations (TensorFlow-ready)
+3.  Cloud-native application architecture
+4.  Professional Git & documentation discipline
 
-This roadmap represents **Phase 1 (0–6 months)**. Future phases may include Machine Learning and advanced cloud architecture.
+This roadmap keeps the original structure but strengthens: -
+Reproducibility - Docker usage (early introduction) - ML foundations -
+Cloud-native mindset
 
----
+------------------------------------------------------------------------
 
-# Phase 1 Goal (0–6 Months)
+# Phase 1 (Months 1--3): Data + Linux Foundations
 
-Build a complete log analysis pipeline that:
+## Global Goal
 
-* Reads logs from files
-* Processes and analyzes them
-* Stores results
-* Generates visualizations
-* Runs on Linux
-* Uses Git for version control
-* Is documented
-* Deploys components to AWS
+Build a robust log-analysis pipeline locally with automation,
+visualization, and clean project structure.
 
-By the end of Phase 1 the system should look like:
+------------------------------------------------------------------------
 
-Logs → Processing → Analysis → Storage → Visualization → Cloud
+# Month 1 -- Foundations
 
----
+## Focus
 
-# Log Sources
+-   Python file handling
+-   Log parsing basics
+-   Linux navigation
+-   Git workflow discipline
+-   Docker introduction
+-   Basic statistics
+-   Pandas (intro)
+-   NumPy (intro)
+-   Matplotlib (intro)
 
-The project will gradually evolve log complexity:
+## Technical Skills
 
-Month 1:
+### Python
 
-* Simple generated logs
-* Excel/CSV files
+-   File reading (txt, csv)
+-   Lists, dictionaries
+-   Basic parsing
+-   pathlib
+-   csv module
+-   json handling
 
-Month 2:
+### Data
 
-* Structured logs
+-   CSV format
+-   Basic descriptive statistics
+-   Intro to pandas DataFrames
+-   Intro to numpy arrays
 
-Month 3:
+### Visualization
 
-* Realistic system-style logs
+-   matplotlib basics
+-   Simple plots (counts, distributions)
 
-Month 4:
+### Linux
 
-* Linux logs
+-   cd, ls, mkdir, cp, mv
+-   cat, grep
+-   File permissions basics
 
-Month 5:
+### Docker (New -- Early Exposure)
 
-* Cloud logs
+-   What containers are
+-   Write first Dockerfile
+-   Run Python script inside container
+-   Understand environment isolation
 
-Month 6:
+## Deliverable
 
-* Integrated pipeline
+-   Script that parses generated logs
+-   Basic statistical summary
+-   At least 2 simple plots using matplotlib
+-   Project runs inside Docker
+-   Documentation updated
+-   Code pushed to GitHub
 
-Logs will include a mix of:
+------------------------------------------------------------------------
 
-* System events
-* Application events
-* Errors
-* Warnings
-* Informational messages
+# Month 2 -- Data Analysis & Visualization
 
----
+## Focus
 
-# Tools and Technologies
+-   Pandas (intermediate)
+-   Data cleaning
+-   Aggregations
+-   Grouping
+-   Time-based analysis
+-   Matplotlib (deeper)
+-   Seaborn (introduction)
 
-## Core
+## Technical Skills
 
-* Python
-* Linux
-* Git
-* AWS
+### Data Manipulation
 
-## Python Libraries
+-   Filtering
+-   GroupBy
+-   Aggregations
+-   Merging datasets
+-   Handling missing values
 
-Core libraries planned for data analysis:
+### Visualization
 
-* pandas
-* numpy
-* matplotlib
-* seaborn
+-   matplotlib advanced usage
+-   seaborn basics
+-   Distribution plots
+-   Time-series plots
 
-Additional utilities:
+### Engineering Discipline
 
-* pathlib
-* csv
-* json
+-   Config file (config.yaml)
+-   Separate raw/processed data
+-   Modular code structure
 
-These libraries will be introduced progressively throughout the project.
+## Deliverable
 
-## AWS Services (Planned)
+-   Log summaries
+-   Visual reports (matplotlib + seaborn)
+-   Clean modular structure
+-   Dockerized analysis environment
 
-* S3
-* EC2
-* IAM
-* CloudWatch (later)
+------------------------------------------------------------------------
 
----
+# Month 3 -- Realistic Logs + Automation
 
-# Repository Structure
+## Focus
 
-```
-log-analysis-pipeline/
-│
-├── config/
-│   └── config.yaml
-│
-├── data/
-│   └── raw/
-│
-├── src/
-│   └── log_pipeline/
-│
-├── scripts/
-│
-├── output/
-│
-├── tests/
-│
-├── docs/
-│
-├── main.py
-├── requirements.txt
-├── .gitignore
-└── README.md
-```
+-   Parsing complex logs
+-   Regex
+-   Multiple file processing
+-   Automation
+-   Linux integration
+-   Cron jobs
+-   Bash scripting
+-   subprocess in Python
 
----
+## Technical Skills
 
-# Learning Principles
+### Parsing
 
-## Daily
+-   Regex patterns
+-   Error handling
+-   Multi-file iteration
 
-Each working day should include:
+### Linux Integration
 
-* Small coding task
-* Git commit
-* Documentation update
+-   Cron
+-   chmod
+-   Pipes and redirection
 
-## Weekly
+### Automation
 
-Each week should include:
+-   Automated execution
+-   Logging output files
+-   Structured output folder
 
-* Working feature
-* Documentation
-* Review
+## Deliverable
 
-## Monthly
+-   Automated local pipeline
+-   Multi-file log processing
+-   Scheduled job (cron)
+-   Visual reports generated automatically
 
-Each month should include:
+------------------------------------------------------------------------
 
-* Integration
-* Refactoring
-* Summary
+# Phase 2 (Months 4--5): ML Foundations
 
----
+## Goal
 
-# Month 1 – Foundations
+Build ML knowledge on top of your structured pipeline.
 
-Location: docs/roadmap/month1/month1.md
+------------------------------------------------------------------------
 
-Focus:
+# Month 4 -- ML Basics
 
-* Git workflow
-* Linux basics
-* Python file handling
-* Reading log files
-* Basic log parsing
-* Environment setup
+## Focus
 
-Data Tools:
+-   Feature engineering
+-   Train/test split
+-   Linear regression
+-   Logistic regression
+-   Evaluation metrics
+-   Overfitting vs underfitting
 
-* pandas (introduction)
-* numpy (basic usage)
+## Technical Skills
 
-Logs:
+-   Implement basic model manually with NumPy
+-   Use scikit-learn
+-   Model evaluation metrics
+-   Save model artifacts
 
-* Generated logs
+## Deliverable
 
-Skills:
+-   ML model trained on processed logs
+-   Evaluation report
+-   Model saved and versioned
+-   Docker image including model
 
-* File handling
-* Python basics
-* Terminal usage
-* Git commits
+------------------------------------------------------------------------
 
-Deliverable:
+# Month 5 -- Toward TensorFlow
 
-* Scripts that read logs
-* Basic statistics
-* Initial documentation
+## Focus
 
----
+-   Neural network fundamentals
+-   Intro to TensorFlow
+-   Data pipelines for training
+-   Reproducible experiments
 
-# Month 2 – Data Analysis
+## Technical Skills
 
-Location: docs/roadmap/month2/month2.md
+-   TensorFlow basics
+-   Simple feedforward network
+-   Training loop understanding
+-   Model serialization
+-   Structured experiment logging
 
-Focus:
+## Deliverable
 
-* Pandas
-* Data cleaning
-* Aggregations
-* Grouping
-* Time analysis
+-   Basic TensorFlow model
+-   Training pipeline
+-   Versioned experiments
+-   Clear documentation
 
-Data Tools:
+------------------------------------------------------------------------
 
-* pandas (intermediate)
-* numpy
-* matplotlib (introduction)
+# Phase 3 (Months 6--8): Cloud-Native Application
 
-Logs:
+## Goal
 
-* Structured logs
+Move the pipeline + ML model to AWS in a cloud-native way.
 
-Skills:
+------------------------------------------------------------------------
 
-* DataFrames
-* Filtering
-* Aggregations
-* Basic plotting
+# Month 6 -- AWS Foundations
 
-Deliverable:
+## Focus
 
-* Log summaries
-* Basic charts
+-   S3
+-   EC2
+-   IAM
+-   AWS CLI
+-   CloudWatch (intro)
 
----
+## Deliverable
 
-# Month 3 – Realistic Logs
+-   Logs stored in S3
+-   Processing running on EC2
+-   Results stored in S3
+-   Basic monitoring
 
-Location: docs/roadmap/month3/month3.md
+------------------------------------------------------------------------
 
-Focus:
+# Month 7 -- Cloud Automation
 
-* Parsing complex logs
-* Regex
-* Multiple files
-* Automation
+## Focus
 
-Data Tools:
+-   Automated deployments mindset
+-   Environment separation (local vs cloud)
+-   Secure IAM roles
+-   Logging & monitoring
 
-* pandas
-* matplotlib
-* seaborn (introduction)
+## Deliverable
 
-Logs:
+-   Automated cloud processing
+-   Proper IAM permissions
+-   Logs observable in CloudWatch
 
-* System-style logs
+------------------------------------------------------------------------
 
-Skills:
+# Month 8 -- Cloud-Native ML Pipeline
 
-* Regex
-* Parsing
-* Automation
-* Visualization
+## Focus
 
-Deliverable:
+-   Stateless processing
+-   Reproducibility
+-   Model inference in cloud
+-   Ready for container orchestration (future Docker/Kubernetes phase)
 
-* Multi-file processing
-* Visual reports
+## Deliverable
 
----
+-   Cloud-native log + ML pipeline
+-   Fully Dockerized system
+-   Clean documentation
+-   Portfolio-ready repository
 
-# Month 4 – Linux Integration
-
-Location: docs/roadmap/month4/month4.md
-
-Focus:
-
-* Linux logs
-* Bash
-* Cron
-* Permissions
-
-Data Tools:
-
-* pandas
-* matplotlib
-* seaborn
-
-Logs:
-
-* Real Linux logs
-
-Skills:
-
-* Bash
-* Cron
-* Linux tools
-
-Deliverable:
-
-* Automated processing
-
----
-
-# Month 5 – Cloud Integration
-
-Location: docs/roadmap/month5/month5.md
-
-Focus:
-
-* AWS S3
-* EC2
-* Uploading files
-* Running scripts
-
-Data Tools:
-
-* pandas
-* matplotlib
-* seaborn
-
-Logs:
-
-* Cloud-hosted logs
-
-Skills:
-
-* AWS CLI
-* EC2
-* S3
-
-Deliverable:
-
-* Cloud pipeline
-
----
-
-# Month 6 – Integration
-
-Location: docs/roadmap/month6/month6.md
-
-Focus:
-
-* Full pipeline
-* Visualization
-* Automation
-
-Data Tools:
-
-* pandas
-* numpy
-* matplotlib
-* seaborn
-
-Logs:
-
-* Mixed logs
-
-Skills:
-
-* Integration
-* Debugging
-
-Deliverable:
-
-* Complete system
-
----
-
-# Phase 2 Preview (6–12 Months)
-
-
-Focus:
-
-* Pandas
-* Data cleaning
-* Aggregations
-* Grouping
-* Time analysis
-
-Logs:
-
-* Structured logs
-
-Skills:
-
-* DataFrames
-* Filtering
-* Aggregations
-
-Deliverable:
-
-* Log summaries
-* Statistics
-
----
-
-# Month 3 – Realistic Logs
-
-
-Focus:
-
-* Parsing complex logs
-* Regex
-* Multiple files
-* Automation
-
-Logs:
-
-* System-style logs
-
-Skills:
-
-* Regex
-* Parsing
-* Automation
-
-Deliverable:
-
-* Multi-file processing
-
----
-
-# Month 4 – Linux Integration
-
-Focus:
-
-* Linux logs
-* Bash
-* Cron
-* Permissions
-
-Logs:
-
-* Real Linux logs
-
-Skills:
-
-* Bash
-* Cron
-* Linux tools
-
-Deliverable:
-
-* Automated processing
-
----
-
-# Month 5 – Cloud Integration
-
-Focus:
-
-* AWS S3
-* EC2
-* Uploading files
-* Running scripts
-
-Logs:
-
-* Cloud-hosted logs
-
-Skills:
-
-* AWS CLI
-* EC2
-* S3
-
-Deliverable:
-
-* Cloud pipeline
-
----
-
-# Month 6 – Integration
-
-Focus:
-
-* Full pipeline
-* Visualization
-* Automation
-
-Logs:
-
-* Mixed logs
-
-Skills:
-
-* Integration
-* Debugging
-
-Deliverable:
-
-* Complete system
-
----
-
-# Phase 2 Preview (6–12 Months)
-
-Possible extensions:
-
-* Machine Learning
-* Anomaly detection
-* Predictions
-* Docker
-* CI/CD
-
-This phase will build on the pipeline created in Phase 1.
-
----
+------------------------------------------------------------------------
 
 # Definition of Done
 
-A task is done when:
+A task is complete when:
 
-* Code runs
-* Code committed
-* Documentation updated
+-   Code runs correctly
+-   Docker build works
+-   Documentation updated
+-   Commit pushed
+-   Feature reproducible
 
----
+------------------------------------------------------------------------
 
-# Notes
-
-This roadmap is a living document and will evolve over time.
-
----
-
-# Detailed Monthly Scopes
-
-## Month 1 – Foundations
-
-Primary Goal:
-Build fundamental skills in Git, Linux, and Python while working with simple log files.
-
-Key Objectives:
-
-* Set up project structure
-* Initialize Git repository
-* Learn basic Linux navigation
-* Read files using Python
-* Convert Excel files to CSV
-* Parse simple logs
-
-Technical Skills:
-
-Python:
-
-* File reading
-* Basic parsing
-* Lists and dictionaries
-
-Linux:
-
-* cd
-* ls
-* mkdir
-* cp
-* mv
-* cat
-* grep
-
-Git:
-
-* init
-* add
-* commit
-* push
-
-Data:
-
-* CSV format
-* Basic statistics
-
-Deliverables:
-
-* Working repository
-* Basic scripts
-* First dataset
-* Documentation
-
----
-
-## Month 2 – Data Analysis
-
-Primary Goal:
-Learn to analyze log data using pandas and numpy.
-
-Key Objectives:
-
-* Load CSV into pandas
-* Clean data
-* Filter logs
-* Group logs
-* Aggregate results
-
-Technical Skills:
-
-Python:
-
-* pandas DataFrames
-* numpy basics
-
-Data:
-
-* Filtering
-* Grouping
-* Aggregation
-
-Visualization:
-
-* matplotlib basics
-
-Deliverables:
-
-* Analysis scripts
-* Summary statistics
-* First charts
-
----
-
-## Month 3 – Log Parsing
-
-Primary Goal:
-Handle more complex and realistic logs.
-
-Key Objectives:
-
-* Parse text logs
-* Use regex
-* Process multiple files
-* Merge datasets
-
-Technical Skills:
-
-Python:
-
-* regex
-* file iteration
-
-Data:
-
-* Merging
-* Transformations
-
-Visualization:
-
-* seaborn basics
-
-Deliverables:
-
-* Log parser
-* Processed datasets
-
----
-
-## Month 4 – Linux Integration
-
-Primary Goal:
-Integrate scripts with Linux environments.
-
-Key Objectives:
-
-* Process Linux logs
-* Use bash commands
-* Automate tasks
-* Handle permissions
-
-Technical Skills:
-
-Linux:
-
-* chmod
-* crontab
-* pipes
-
-Python:
-
-* subprocess
-
-Deliverables:
-
-* Automated scripts
-* Scheduled jobs
-
----
-
-## Month 5 – Cloud Integration
-
-Primary Goal:
-Move the pipeline to AWS.
-
-Key Objectives:
-
-* Upload files to S3
-* Run scripts on EC2
-* Transfer files
-
-Technical Skills:
-
-AWS:
-
-* S3
-* EC2
-
-Tools:
-
-* AWS CLI
-
-Deliverables:
-
-* Cloud storage
-* Cloud processing
-
----
-
-## Month 6 – Integration
-
-Primary Goal:
-Build a complete pipeline.
-
-Key Objectives:
-
-* Combine scripts
-* Automate pipeline
-* Generate reports
-
-Technical Skills:
-
-Python:
-
-* Modular code
-
-Data:
-
-* End-to-end pipeline
-
-Deliverables:
-
-* Full pipeline
-* Final documentation
+Progress over perfection.
 
