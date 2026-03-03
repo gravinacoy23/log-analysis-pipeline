@@ -1,6 +1,6 @@
 from datetime import datetime, UTC
+from pathlib import Path
 import random
-import os
 
 SERVICES = ["shopping", "pricing", "booking"]
 
@@ -37,18 +37,16 @@ def build_log_line():
     return f'{timestamp} service={service} user={random.randint(1,100)} cpu={random.randint(30,70)} mem={random.randint(40,75)} response={random.randint(200,900)} level={random.choice(MESSAGE_TYPE)} msg="{message}"'
 
 
-def make_directory(base_route):
-    new_dir = "data/raw"
-    joint_route = os.path.join(base_route, new_dir)
+def make_directory():
+    target_path = Path(__file__).resolve().parents[1]
+    dynamic_dir = target_path / "data" / "raw"
 
-    if not os.path.exists(joint_route):
-        os.makedirs(joint_route)
+    dynamic_dir.mkdir(parents=True, exist_ok=True)
 
-    return joint_route
+    return dynamic_dir
 
 
 if __name__ == "__main__":
     for _ in range(5):
         print(build_log_line())
-
-    print(make_directory("/home/gravinacoy23/logs-analysis-pipeline/"))
+    print(make_directory())

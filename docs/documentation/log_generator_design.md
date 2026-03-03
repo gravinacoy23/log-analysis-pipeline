@@ -82,6 +82,35 @@ This ensures that log generation runs only when the script is executed directly,
 
 ---
 
+## Directory Management
+
+### `make_directory()`
+
+Creates the `data/raw` directory dynamically if it does not exist.
+
+This function ensures that the log generator is environment-independent and does not rely on pre-created folders.
+
+### Design Decisions
+
+- Uses `pathlib` for OS-independent path handling.
+- Resolves the script location using `__file__` to ensure portability.
+- Navigates to the project root dynamically.
+- Creates directories using:
+
+    dynamic_dir.mkdir(parents=True, exist_ok=True)
+
+This guarantees:
+
+- No failure if the directory already exists.
+- No dependency on the current working directory.
+- Consistent behavior across operating systems.
+- Compatibility with future Docker execution.
+
+### Why This Matters
+
+In production-oriented systems, scripts must be self-sufficient and should not depend on manual environment setup.  
+This function ensures reproducibility and portability of the log generation process.
+
 ## Future Improvements (Planned)
 
 - Conditional error probability based on CPU and response time
