@@ -21,10 +21,18 @@ log-analysis-pipeline/
 │
 ├── data/
 │   └── raw/
+├── src
+│   ├── ingestion
+│   │   └── log_reader.py
+│   │
+│   ├── processing
+│   │   └── log_parser.py
+│   │
+│   └── utils
+│       └── features.py
 │
-├── src/
-│   └── log_pipeline/
-│
+├── pipelines
+│   └── run_pipeline.py
 ├── scripts/
 │
 ├── output/
