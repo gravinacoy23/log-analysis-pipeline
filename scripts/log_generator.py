@@ -57,5 +57,5 @@ def build_log_line():
 
 
 if __name__ == "__main__":
-    for _ in range(5):
+    for _ in range(100):
         build_log_line()
