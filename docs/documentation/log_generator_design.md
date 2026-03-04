@@ -1,120 +1,213 @@
-# Log Generator – Initial Implementation
+# Log Generator -- Initial Implementation
 
 ## Objective
 
-Implement the initial version of a synthetic log generator for the airline booking backend simulation.
+Implement the initial version of a synthetic log generator for the
+airline booking backend simulation.
 
 The goal of this phase is to:
 
-- Define a consistent and parseable log format
-- Build a modular log generation structure
-- Generate valid log lines for multiple services
-- Prepare the foundation for future behavior simulation
+-   Define a consistent and parseable log format
+-   Build a modular log generation structure
+-   Generate valid log lines for multiple services
+-   Persist generated logs to disk
+-   Prepare the foundation for future behavior simulation
 
----
+------------------------------------------------------------------------
 
-## System Context
+# System Context
 
-The simulated system represents an airline booking platform composed of three services:
+The simulated system represents an airline booking platform composed of
+three services:
 
-- shopping
-- pricing
-- booking
+-   shopping
+-   pricing
+-   booking
 
 Each generated log represents a single backend request event.
 
----
+The log generator simulates operational metrics typically found in
+backend service logs such as CPU usage, memory usage, response time, and
+event messages.
 
-## Log Format
+------------------------------------------------------------------------
+
+# Log Format
 
 Each log entry follows this structure:
 
-<timestamp> service=<service> user=<id> cpu=<value> mem=<value> response=<ms> level=<LEVEL> msg="<message>"
+    <timestamp> service=<service> user=<id> cpu=<value> mem=<value> response=<ms> level=<LEVEL> msg="<message>"
 
 Example:
 
-2026-03-02T18:23:11Z service=pricing user=42 cpu=73 mem=68 response=842 level=INFO msg="Price calculation completed"
+    2026-03-02T18:23:11Z service=pricing user=42 cpu=73 mem=68 response=842 level=INFO msg="Price calculation completed"
 
----
+### Design Considerations
 
-## Implementation Details
+The format is intentionally designed to be:
 
-### Modular Functions
+-   **Human readable**
+-   **Machine parseable**
+-   **Feature-friendly for ML pipelines**
+
+Each field can later be extracted into structured features for analysis
+and model training.
+
+------------------------------------------------------------------------
+
+# Implementation Details
+
+## Modular Functions
 
 The generator is structured using small, focused functions:
 
-- `generate_timestamp()`  
-- `generate_service()`  
-- `generate_message(service)`  
-- `build_log_line()`
+-   `generate_timestamp()`
+-   `generate_service()`
+-   `generate_message(service)`
+-   `build_log_line()`
+-   `make_directory()`
+-   `write_log(target_path, service, log_line)`
 
 This modular approach ensures:
 
-- Clear separation of responsibilities
-- Future extensibility
-- Easier refactoring
+-   Clear separation of responsibilities
+-   Future extensibility
+-   Easier refactoring
+-   Improved readability and maintainability
 
----
+------------------------------------------------------------------------
 
-## Randomization Strategy
+# Randomization Strategy
 
 For the initial implementation:
 
-- Services are selected randomly
-- Users are generated between 1–100
-- CPU usage between 30–70
-- Memory usage between 40–75
-- Response time between 200–900 ms
-- Log level randomly selected from INFO/WARNING/ERROR
-- Message selected based on service
+-   Services are selected randomly
+-   Users are generated between **1--100**
+-   CPU usage between **30--70**
+-   Memory usage between **40--75**
+-   Response time between **200--900 ms**
+-   Log level randomly selected from **INFO / WARNING / ERROR**
+-   Message selected based on service type
 
 At this stage, no conditional probability logic has been introduced.
 
----
+Future iterations will introduce more realistic correlations between
+system load and error probability.
 
-## Execution Behavior
+------------------------------------------------------------------------
+
+# Execution Behavior
 
 The script includes a proper execution guard:
 
-if __name__ == "__main__":
+    if __name__ == "__main__":
 
-This ensures that log generation runs only when the script is executed directly, not when imported as a module.
+This ensures that log generation runs only when the script is executed
+directly, not when imported as a module.
 
----
+This design supports:
 
-## Directory Management
+-   Reusability of functions
+-   Easier testing
+-   Future integration with other pipeline components
 
-### `make_directory()`
+------------------------------------------------------------------------
+
+# Directory Management
+
+## `make_directory()`
 
 Creates the `data/raw` directory dynamically if it does not exist.
 
-This function ensures that the log generator is environment-independent and does not rely on pre-created folders.
+This function ensures that the log generator is environment-independent
+and does not rely on pre-created folders.
 
 ### Design Decisions
 
-- Uses `pathlib` for OS-independent path handling.
-- Resolves the script location using `__file__` to ensure portability.
-- Navigates to the project root dynamically.
-- Creates directories using:
+-   Uses **pathlib** for OS-independent path handling.
+-   Resolves the script location using `__file__` to ensure portability.
+-   Navigates to the project root dynamically.
+-   Creates directories using:
 
+```{=html}
+<!-- -->
+```
     dynamic_dir.mkdir(parents=True, exist_ok=True)
 
-This guarantees:
+### Guarantees
 
-- No failure if the directory already exists.
-- No dependency on the current working directory.
-- Consistent behavior across operating systems.
-- Compatibility with future Docker execution.
+-   No failure if the directory already exists
+-   No dependency on the current working directory
+-   Consistent behavior across operating systems
+-   Compatibility with future Docker execution
 
 ### Why This Matters
 
-In production-oriented systems, scripts must be self-sufficient and should not depend on manual environment setup.  
-This function ensures reproducibility and portability of the log generation process.
+In production-oriented systems, scripts must be self-sufficient and
+should not depend on manual environment setup.
 
-## Future Improvements (Planned)
+This function ensures reproducibility and portability of the log
+generation process.
 
-- Conditional error probability based on CPU and response time
-- Peak vs off-peak hour simulation
-- Service-specific instability modeling
-- Writing logs to service-specific files
-- Temporal correlation between events
+------------------------------------------------------------------------
+
+# Log Persistence
+
+## `write_log(target_path, service, log_line)`
+
+Responsible for writing generated logs to disk.
+
+Each service writes to its own log file inside the `data/raw` directory.
+
+### Output Structure
+
+    data/raw/
+        shopping.log
+        pricing.log
+        booking.log
+
+### Implementation Behavior
+
+The function:
+
+1.  Receives the base directory path generated by `make_directory()`
+2.  Determines the correct file based on the service name
+3.  Opens the file in **append mode**
+4.  Writes the generated log line
+
+Example path construction:
+
+    target_path / f"{service}.log"
+
+### Design Decisions
+
+-   Uses **append mode (`"a"`)** to avoid overwriting existing logs
+-   Uses **UTF‑8 encoding** for portability
+-   Uses a **context manager** to ensure files are safely closed
+
+```{=html}
+<!-- -->
+```
+    with file.open("a", encoding="utf-8") as f:
+
+### Why This Matters
+
+Writing logs incrementally simulates how real backend systems produce
+logs over time.
+
+Separating logs by service allows:
+
+-   Service-specific analysis
+-   Easier debugging
+-   More realistic distributed system simulation
+
+------------------------------------------------------------------------
+
+# Future Improvements (Planned)
+
+-   Conditional error probability based on CPU and response time
+-   Peak vs off-peak hour simulation
+-   Service-specific instability modeling
+-   Temporal correlation between events
+-   Large-scale log generation for dataset creation
+
