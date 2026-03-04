@@ -30,13 +30,6 @@ def generate_message(service):
     return random.choice(service_messages)
 
 
-def build_log_line():
-    timestamp = generate_timestamp()
-    service = generate_service()
-    message = generate_message(service)
-    return f'{timestamp} service={service} user={random.randint(1,100)} cpu={random.randint(30,70)} mem={random.randint(40,75)} response={random.randint(200,900)} level={random.choice(MESSAGE_TYPE)} msg="{message}"'
-
-
 def make_directory():
     target_path = Path(__file__).resolve().parents[1]
     dynamic_dir = target_path / "data" / "raw"
@@ -46,7 +39,23 @@ def make_directory():
     return dynamic_dir
 
 
+def write_log(target_path, service, log_line):
+    file = target_path / f"{service}.log"
+
+    with file.open("a", encoding="utf-8") as f:
+        f.write(log_line + "\n")
+
+
+def build_log_line():
+    timestamp = generate_timestamp()
+    service = generate_service()
+    message = generate_message(service)
+    log = f'{timestamp} service={service} user={random.randint(1,100)} cpu={random.randint(30,70)} mem={random.randint(40,75)} response={random.randint(200,900)} level={random.choice(MESSAGE_TYPE)} msg="{message}"'
+    directory = make_directory()
+
+    write_log(directory, service, log)
+
+
 if __name__ == "__main__":
     for _ in range(5):
-        print(build_log_line())
-    print(make_directory())
+        build_log_line()
