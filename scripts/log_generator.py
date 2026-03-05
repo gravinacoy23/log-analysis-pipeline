@@ -30,17 +30,23 @@ def generate_message(service):
     return random.choice(service_messages)
 
 
-def make_directory():
+def make_raw_directory():
     target_path = Path(__file__).resolve().parents[1]
     dynamic_dir = target_path / "data" / "raw"
-
     dynamic_dir.mkdir(parents=True, exist_ok=True)
 
     return dynamic_dir
 
 
-def write_log(target_path, service, log_line):
-    file = target_path / f"{service}.log"
+def make_service_directories(raw_dir, services):
+    for service in services:
+        service_dir = raw_dir / service
+        service_dir.mkdir(parents=True, exist_ok=True)
+    return
+
+
+def write_log(target_path, service, run_timestamp, log_line):
+    file = target_path / service / f"{service}_{run_timestamp}.log"
 
     with file.open("a", encoding="utf-8") as f:
         f.write(log_line + "\n")
@@ -61,7 +67,10 @@ def generate_metrics():
 
 
 def generate_logs(iterations):
-    directory = make_directory()
+    directory = make_raw_directory()
+    run_timestamp = generate_timestamp()
+    make_service_directories(directory, SERVICES)
+
     for _ in range(iterations):
         timestamp = generate_timestamp()
         service = generate_service()
@@ -70,7 +79,7 @@ def generate_logs(iterations):
         log = format_log(
             timestamp, service, user, cpu, memory, response, level, message
         )
-        write_log(directory, service, log)
+        write_log(directory, service, run_timestamp, log)
 
 
 if __name__ == "__main__":
