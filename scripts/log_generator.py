@@ -46,16 +46,32 @@ def write_log(target_path, service, log_line):
         f.write(log_line + "\n")
 
 
-def build_log_line():
-    timestamp = generate_timestamp()
-    service = generate_service()
-    message = generate_message(service)
-    log = f'{timestamp} service={service} user={random.randint(1,100)} cpu={random.randint(30,70)} mem={random.randint(40,75)} response={random.randint(200,900)} level={random.choice(MESSAGE_TYPE)} msg="{message}"'
-    directory = make_directory()
+def format_log(timestamp, service, user, cpu, memory, response, level, message):
+    return f'{timestamp} service={service} user={user} cpu={cpu} mem={memory} response={response} level={level} msg="{message}"'
 
-    write_log(directory, service, log)
+
+def generate_metrics():
+    user = random.randint(1, 100)
+    cpu = random.randint(30, 70)
+    memory = random.randint(40, 75)
+    response = random.randint(200, 900)
+    level = random.choice(MESSAGE_TYPE)
+
+    return user, cpu, memory, response, level
+
+
+def generate_logs(iterations):
+    directory = make_directory()
+    for _ in range(iterations):
+        timestamp = generate_timestamp()
+        service = generate_service()
+        message = generate_message(service)
+        user, cpu, memory, response, level = generate_metrics()
+        log = format_log(
+            timestamp, service, user, cpu, memory, response, level, message
+        )
+        write_log(directory, service, log)
 
 
 if __name__ == "__main__":
-    for _ in range(100):
-        build_log_line()
+    generate_logs(100)
