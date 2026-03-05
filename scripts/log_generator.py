@@ -42,7 +42,6 @@ def make_service_directories(raw_dir, services):
     for service in services:
         service_dir = raw_dir / service
         service_dir.mkdir(parents=True, exist_ok=True)
-    return
 
 
 def write_log(target_path, service, run_timestamp, log_line):
