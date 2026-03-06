@@ -51,18 +51,41 @@ def write_log(target_path, service, run_timestamp, log_line):
         f.write(log_line + "\n")
 
 
-def format_log(timestamp, service, user, cpu, memory, response, level, message):
-    return f'{timestamp} service={service} user={user} cpu={cpu} mem={memory} response={response} level={level} msg="{message}"'
+def format_log(timestamp, service, user, cpu, memory, response_time, level, message):
+    return f'{timestamp} service={service} user={user} cpu={cpu} mem={memory} response_time={response_time} level={level} msg="{message}"'
 
 
-def generate_metrics():
-    user = random.randint(1, 100)
-    cpu = random.randint(30, 70)
-    memory = random.randint(40, 75)
-    response = random.randint(200, 900)
-    level = random.choice(MESSAGE_TYPE)
+def generate_user():
+    return random.randint(1, 100)
 
-    return user, cpu, memory, response, level
+
+def generate_memory():
+    return random.randint(40, 75)
+
+
+def generate_cpu():
+    return random.randint(30, 70)
+
+
+def generate_response_time(cpu):
+    if cpu < 50:
+        return random.randint(200, 500)
+    elif 50 <= cpu < 70:
+        return random.randint(501, 800)
+    else:
+        return random.randint(801, 1200)
+
+
+def determine_level(response_time, messages):
+    if response_time < 600:
+        level = random.choices(messages, weights=[1, 0, 0])
+        return level[0]
+    elif 600 <= response_time < 900:
+        level = random.choices(messages, weights=[0.8, 0.2, 0])
+        return level[0]
+    else:
+        level = random.choices(messages, weights=[0, 0.5, 0.5])
+        return level[0]
 
 
 def generate_logs(iterations):
@@ -74,9 +97,13 @@ def generate_logs(iterations):
         timestamp = generate_timestamp()
         service = generate_service()
         message = generate_message(service)
-        user, cpu, memory, response, level = generate_metrics()
+        user = generate_user()
+        memory = generate_memory()
+        cpu = generate_cpu()
+        response_time = generate_response_time(cpu)
+        level = determine_level(response_time, MESSAGE_TYPE)
         log = format_log(
-            timestamp, service, user, cpu, memory, response, level, message
+            timestamp, service, user, cpu, memory, response_time, level, message
         )
         write_log(directory, service, run_timestamp, log)
 
