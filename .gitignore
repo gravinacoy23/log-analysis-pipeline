@@ -19,3 +19,7 @@ Thumbs.db
 
 # Output data
 output/
+
+#Ignore vim temp files
+*.swp
+*.swo
