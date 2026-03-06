@@ -1,11 +1,11 @@
 # Log Analysis Pipeline Configuration
 
 paths:
-  input_log: data/raw/sample.log
+  raw_log: data/raw/
   output_dir: output/
 
 log_format:
-  timestamp_format: "%Y-%m-%d %H:%M:%S"
+  timestamp_format: "%Y-%m-%dT%H:%M:%SZ"
 
 analysis:
   error_keywords:
@@ -16,3 +16,27 @@ analysis:
 output:
   save_summary: true
   save_errors: true
+
+services:
+  - shopping
+  - pricing
+  - booking
+
+messages:
+  shopping:
+   - "FareSearch completed"
+   - "AirShopping completed"
+   - "No fares available"
+  pricing:
+    - "OfferPrice completed"
+    - "Dynamic price applied"
+    - "Fare rules evaluated"
+  booking:
+    - "Booking confirmed"
+    - "Booking failed"
+    - "Seat booked"
+
+message_type:
+  - INFO
+  - WARNING
+  - ERROR

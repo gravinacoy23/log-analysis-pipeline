@@ -1,59 +1,101 @@
-# Log Generator -- Initial Implementation
+# Log Generator — Implementation (v2)
 
 ## Objective
 
-Implement the initial version of a synthetic log generator for the
-airline booking backend simulation.
+Implement a synthetic log generator for the airline booking backend simulation.
 
 The goal of this phase is to:
 
--   Define a consistent and parseable log format
--   Build a modular log generation structure
--   Generate valid log lines for multiple services
--   Persist generated logs to disk
--   Prepare the foundation for future behavior simulation
+- Define a consistent and parseable log format
+- Build a modular log generation structure
+- Generate valid log lines for multiple services
+- Persist generated logs to disk
+- Introduce realistic correlations between system metrics
+- Prepare the foundation for future ML pipelines
 
-------------------------------------------------------------------------
+---
 
 # System Context
 
-The simulated system represents an airline booking platform composed of
-three services:
+The simulated system represents an airline booking platform composed of three services:
 
--   shopping
--   pricing
--   booking
+- shopping
+- pricing
+- booking
 
 Each generated log represents a single backend request event.
 
-The log generator simulates operational metrics typically found in
-backend service logs such as CPU usage, memory usage, response time, and
-event messages.
+The log generator simulates operational metrics typically found in backend service logs: CPU usage, memory usage, response time, log level, and event messages.
 
-------------------------------------------------------------------------
+---
 
 # Log Format
 
 Each log entry follows this structure:
 
-    <timestamp> service=<service> user=<id> cpu=<value> mem=<value> response=<ms> level=<LEVEL> msg="<message>"
+```
+<timestamp> service=<service> user=<id> cpu=<value> mem=<value> response_time=<ms> level=<LEVEL> msg="<message>"
+```
 
 Example:
 
-    2026-03-02T18:23:11Z service=pricing user=42 cpu=73 mem=68 response=842 level=INFO msg="Price calculation completed"
+```
+2026-03-02T18:23:11Z service=pricing user=42 cpu=73 mem=68 response_time=842 level=WARNING msg="Dynamic price applied"
+```
 
 ### Design Considerations
 
 The format is intentionally designed to be:
 
--   **Human readable**
--   **Machine parseable**
--   **Feature-friendly for ML pipelines**
+- **Human readable**
+- **Machine parseable**
+- **Feature-friendly for ML pipelines**
 
-Each field can later be extracted into structured features for analysis
-and model training.
+Each field can be extracted into structured features for analysis and model training.
 
-------------------------------------------------------------------------
+> Note: Field was renamed from `response` to `response_time` for clarity.
+
+---
+
+# Configuration
+
+All constants (services, messages, log levels) are externalized to `config/config.yaml`.
+
+This follows the principle of separating configuration from logic.
+
+The generator loads configuration at runtime using `load_config()`, which reads the YAML file using `yaml.safe_load()`.
+
+`safe_load()` is used instead of `yaml.load()` because it only parses data and never executes arbitrary code, making it safe for production-oriented systems.
+
+### config.yaml structure (relevant section)
+
+```yaml
+services:
+  - shopping
+  - pricing
+  - booking
+
+messages:
+  shopping:
+    - "FareSearch completed"
+    - "AirShopping completed"
+    - "No fares available"
+  pricing:
+    - "OfferPrice completed"
+    - "Dynamic price applied"
+    - "Fare rules evaluated"
+  booking:
+    - "Booking confirmed"
+    - "Booking failed"
+    - "Seat booked"
+
+message_type:
+  - INFO
+  - WARNING
+  - ERROR
+```
+
+---
 
 # Implementation Details
 
@@ -61,153 +103,140 @@ and model training.
 
 The generator is structured using small, focused functions:
 
--   `generate_timestamp()`
--   `generate_service()`
--   `generate_message(service)`
--   `build_log_line()`
--   `make_directory()`
--   `write_log(target_path, service, log_line)`
+- `load_config()` — loads services, messages, and log levels from config.yaml
+- `generate_timestamp()` — generates current UTC timestamp
+- `generate_service(services)` — selects a random service from config
+- `generate_message(service, message_list)` — selects a message based on service
+- `generate_user()` — generates a random user ID
+- `generate_cpu()` — generates a random CPU usage value
+- `generate_memory()` — generates a random memory usage value
+- `generate_response_time(cpu)` — generates response time correlated with CPU load
+- `determine_level(response_time, message_type)` — determines log level based on response time thresholds and probabilities
+- `format_log(...)` — builds the final log line string
+- `make_raw_directory()` — creates `data/raw/` if it does not exist
+- `make_service_directories(raw_dir, services)` — creates per-service subdirectories
+- `write_log(target_path, service, run_timestamp, log_line)` — persists log line to disk
+- `generate_logs(iterations)` — orchestrates the full generation pipeline
 
-This modular approach ensures:
+---
 
--   Clear separation of responsibilities
--   Future extensibility
--   Easier refactoring
--   Improved readability and maintainability
+# Metric Generation Strategy
 
-------------------------------------------------------------------------
+## CPU
 
-# Randomization Strategy
+Generated randomly between 30 and 70.
 
-For the initial implementation:
+```python
+def generate_cpu():
+    return random.randint(30, 70)
+```
 
--   Services are selected randomly
--   Users are generated between **1--100**
--   CPU usage between **30--70**
--   Memory usage between **40--75**
--   Response time between **200--900 ms**
--   Log level randomly selected from **INFO / WARNING / ERROR**
--   Message selected based on service type
+## Response Time — Correlated with CPU
 
-At this stage, no conditional probability logic has been introduced.
+Response time is not generated independently. It depends on CPU load to introduce realistic correlation that ML models can later detect.
 
-Future iterations will introduce more realistic correlations between
-system load and error probability.
+```
+cpu < 50      → response_time 200–500 ms
+cpu 50–69     → response_time 501–800 ms
+cpu >= 70     → response_time 801–1200 ms
+```
 
-------------------------------------------------------------------------
+This ensures coherence: high CPU load produces higher response times. A log with `cpu=30` and `response_time=1100` would be incoherent and pollute the dataset.
+
+> Future improvement: incorporate memory usage as a second factor influencing response time.
+
+## Memory
+
+Generated independently between 40 and 75. No correlation introduced at this stage.
+
+## User
+
+Generated randomly between 1 and 100.
+
+---
+
+# Level Determination — Thresholds and Probabilities
+
+Log level is a **consequence** of system metrics, not an independent random value.
+
+`determine_level(response_time, message_type)` evaluates response time against thresholds and applies weighted probabilities to simulate realistic variability.
+
+```
+response_time < 600      → 100% INFO
+
+600 <= response_time < 900 →
+    80% INFO
+    20% WARNING
+
+response_time >= 900     →
+    50% WARNING
+    50% ERROR
+```
+
+Using probabilities instead of hard thresholds ensures the dataset is not artificially perfect. A system under moderate load will mostly produce INFO logs but occasionally generate WARNING — which is how real systems behave.
+
+Implementation uses `random.choices()` with `weights` parameter.
+
+---
 
 # Execution Behavior
 
 The script includes a proper execution guard:
 
-    if __name__ == "__main__":
+```python
+if __name__ == "__main__":
+    generate_logs(100)
+```
 
-This ensures that log generation runs only when the script is executed
-directly, not when imported as a module.
+This ensures log generation runs only when the script is executed directly, not when imported as a module.
 
-This design supports:
-
--   Reusability of functions
--   Easier testing
--   Future integration with other pipeline components
-
-------------------------------------------------------------------------
+---
 
 # Directory Management
 
-## `make_directory()`
+## `make_raw_directory()`
 
-Creates the `data/raw` directory dynamically if it does not exist.
+Creates `data/raw/` dynamically if it does not exist.
 
-This function ensures that the log generator is environment-independent
-and does not rely on pre-created folders.
+Uses `pathlib` for OS-independent path resolution. Resolves the project root using `__file__` to ensure portability across environments including Docker.
 
-### Design Decisions
+## `make_service_directories(raw_dir, services)`
 
--   Uses **pathlib** for OS-independent path handling.
--   Resolves the script location using `__file__` to ensure portability.
--   Navigates to the project root dynamically.
--   Creates directories using:
+Creates one subdirectory per service inside `data/raw/`.
 
-```{=html}
-<!-- -->
 ```
-    dynamic_dir.mkdir(parents=True, exist_ok=True)
+data/raw/
+    shopping/
+    pricing/
+    booking/
+```
 
-### Guarantees
+Services are read from config, not hardcoded.
 
--   No failure if the directory already exists
--   No dependency on the current working directory
--   Consistent behavior across operating systems
--   Compatibility with future Docker execution
-
-### Why This Matters
-
-In production-oriented systems, scripts must be self-sufficient and
-should not depend on manual environment setup.
-
-This function ensures reproducibility and portability of the log
-generation process.
-
-------------------------------------------------------------------------
+---
 
 # Log Persistence
 
-## `write_log(target_path, service, log_line)`
+## `write_log(target_path, service, run_timestamp, log_line)`
 
-Responsible for writing generated logs to disk.
+Each execution run writes to a timestamped file per service:
 
-Each service writes to its own log file inside the `data/raw` directory.
-
-### Output Structure
-
-    data/raw/
-        shopping.log
-        pricing.log
-        booking.log
-
-### Implementation Behavior
-
-The function:
-
-1.  Receives the base directory path generated by `make_directory()`
-2.  Determines the correct file based on the service name
-3.  Opens the file in **append mode**
-4.  Writes the generated log line
-
-Example path construction:
-
-    target_path / f"{service}.log"
-
-### Design Decisions
-
--   Uses **append mode (`"a"`)** to avoid overwriting existing logs
--   Uses **UTF‑8 encoding** for portability
--   Uses a **context manager** to ensure files are safely closed
-
-```{=html}
-<!-- -->
 ```
-    with file.open("a", encoding="utf-8") as f:
+data/raw/shopping/shopping_<run_timestamp>.log
+data/raw/pricing/pricing_<run_timestamp>.log
+data/raw/booking/booking_<run_timestamp>.log
+```
 
-### Why This Matters
+The run timestamp is generated once at the start of `generate_logs()` and shared across all writes in that run. This groups all logs from a single execution into identifiable files.
 
-Writing logs incrementally simulates how real backend systems produce
-logs over time.
+Files are opened in append mode to avoid overwriting existing logs.
 
-Separating logs by service allows:
-
--   Service-specific analysis
--   Easier debugging
--   More realistic distributed system simulation
-
-------------------------------------------------------------------------
+---
 
 # Future Improvements (Planned)
 
--   Conditional error probability based on CPU and response time
--   Peak vs off-peak hour simulation
--   Service-specific instability modeling
--   Temporal correlation between events
--   Large-scale log generation for dataset creation
-
+- Memory usage as a second factor influencing response time
+- Peak vs off-peak hour simulation (time-based load patterns)
+- Service-specific instability modeling
+- Temporal correlation between consecutive events
+- Large-scale log generation for dataset creation
