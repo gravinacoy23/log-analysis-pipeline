@@ -240,3 +240,4 @@ Files are opened in append mode to avoid overwriting existing logs.
 - Service-specific instability modeling
 - Temporal correlation between consecutive events
 - Large-scale log generation for dataset creation
+- Implement a better way to resolve the path when reading the config file. ex. env variable and project constant.
