@@ -1,94 +1,100 @@
-# Month 1 -- Week 1 (Sprint 1)
+# Month 1 — Week 1 (Sprint 1)
 
 ## Sprint Goal
 
 Build the foundation of the log pipeline:
 
--   Create project structure
--   Implement log generator
--   Implement log reader
--   Implement basic parser
+- Design and implement a production-oriented log generator
+- Implement log reader
+- Implement basic parser
+- Integrate reader + parser in main.py
 
 No pandas yet. No visualization yet. No Docker yet.
 
-------------------------------------------------------------------------
+---
+
+## Progress Note
+
+This sprint went deeper than originally planned.
+
+The log generator was not just implemented — it was designed, documented,
+and refined with production-oriented thinking from day one.
+
+This is intentional. The goal is not speed. The goal is learning things well.
+
+---
 
 # Day-by-Day Breakdown
 
-## Day 1
+## Day 1 ✅
+- Created repository structure
+- Initialized Git
+- Created README
+- First commit
 
--   Create repository structure
--   Initialize Git
--   Create README
--   First commit
+## Day 2 ✅
+- Created `log_generator.py` (initial version)
+- Generated synthetic log entries
+- Saved logs to `data/raw/` with per-service subdirectories
 
-------------------------------------------------------------------------
+## Day 3–5 ✅ (Refinement Sprint)
+The generator went through a full refinement cycle:
 
-## Day 2
+- Separated `level` from `generate_metrics()` — level is a consequence, not a metric
+- Introduced CPU → response_time correlation for realistic data
+- Implemented threshold + probability logic in `determine_level()`
+- Externalized all constants (services, messages, log levels) to `config/config.yaml`
+- Implemented `load_config()` using `yaml.safe_load()`
+- Renamed `response` to `response_time` for clarity
+- Removed unnecessary `return` from `make_service_directories()`
+- Updated `log_generator_design.md` to reflect v2 implementation
+- Added `*.swp` and `*.swo` to `.gitignore`
 
--   Create `log_generator.py`
--   Generate 50--100 synthetic log entries
--   Save to `data/raw/app.log`
+## Day 6 — Current
+- Implement `reader.py`
+  - Lives in `src/ingestion/`
+  - Receives a file path
+  - Returns a list of raw strings (one per log line)
+  - Handles file-not-found gracefully
 
-Commit changes.
+## Day 7
+- Implement `parser.py`
+  - Lives in `src/processing/`
+  - Receives a list of raw strings
+  - Returns a list of dictionaries (one per log line)
+  - Handles malformed lines gracefully
 
-------------------------------------------------------------------------
+## Day 8
+- Integrate reader + parser in `main.py`
+- Print structured logs to verify pipeline works end to end
 
-## Day 3
+## Day 9 (Sprint Review)
+- Document what was learned
+- Document difficulties encountered
+- Reflect on improvements
+- Push final version
 
--   Implement `reader.py`
--   Read log file safely
--   Handle file-not-found exception
-
-Commit changes.
-
-------------------------------------------------------------------------
-
-## Day 4
-
--   Implement `parser.py`
--   Parse one log line into dictionary
--   Handle malformed lines gracefully
-
-Commit changes.
-
-------------------------------------------------------------------------
-
-## Day 5
-
--   Integrate reader + parser in `main.py`
--   Print structured logs
-
-Commit changes.
-
-------------------------------------------------------------------------
-
-## Day 6
-
--   Refactor if needed
--   Improve naming
--   Improve error handling
-
-Commit changes.
-
-------------------------------------------------------------------------
-
-## Day 7 (Sprint Review)
-
--   Document what was learned
--   Document difficulties
--   Push final version
--   Reflect on improvements
-
-------------------------------------------------------------------------
+---
 
 # Sprint Deliverable
 
 At the end of Week 1 you must have:
 
--   Synthetic logs generated automatically
--   Logs read from file
--   Logs parsed into dictionaries
--   At least 5--7 commits
--   Documentation updated
+- Synthetic logs generated automatically with realistic correlations
+- Logs read from file safely
+- Logs parsed into structured dictionaries
+- Pipeline integrated in main.py
+- At least 7–10 commits with clear messages
+- Documentation updated
 
+---
+
+# Definition of Done
+
+A task is complete when:
+
+- Code runs
+- Structure is clean
+- Documentation updated
+- Commit pushed
+- Behavior is reproducible
