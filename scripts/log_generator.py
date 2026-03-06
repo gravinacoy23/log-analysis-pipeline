@@ -3,20 +3,6 @@ from pathlib import Path
 import random
 import yaml
 
-# SERVICES = ["shopping", "pricing", "booking"]
-
-# MESSAGES = {
-#    "shopping": ["FareSearch completed", "AirShopping completed", "No fares available"],
-#   "pricing": [
-#      "OfferPrice completed",
-#     "Dynamic price applied",
-#    "Fare rules evaluated",
-#  ],
-#  "booking": ["Booking confirmed", "Booking failed", "Seat booked"],
-# }
-
-# MESSAGE_TYPE = ["INFO", "WARNING", "ERROR"]
-
 
 def load_config():
     parent_path = Path(__file__).resolve().parents[1]
