@@ -24,10 +24,4 @@ output/
 *.swp
 *.swo
 
-#keep a couple of empty directories
-tests/.gitkeep
-output/.gitkeep
-src/ .gitkeep
-ingestion/ .gitkeep
-processing/ .gitkeep
-utils/ .gitkeep
+
