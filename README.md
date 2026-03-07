@@ -44,14 +44,11 @@ anomaly detection.
 
 Each log entry follows this structure:
 
-`<timestamp>`{=html} service=`<service_name>`{=html} user=`<id>`{=html}
-cpu=`<value>`{=html} mem=`<value>`{=html} response=`<ms>`{=html}
-level=`<LEVEL>`{=html} msg="`<message>`{=html}"
+`<timestamp>`service=`<service_name>`user=`<id>` cpu=`<value>` mem=`<value>` response_time=`<ms>` level=`<LEVEL>` msg="`<message>`"
 
 Example:
 
-2026-03-02T18:23:11Z service=pricing-service user=42 cpu=73 mem=68
-response=842 level=INFO msg="Price calculation completed"
+2026-03-02T18:23:11Z service=pricing-service user=42 cpu=73 mem=68 response=842 level=INFO msg="Price calculation completed"
 
 Full detailed specification is available in:
 
