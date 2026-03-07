@@ -13,6 +13,12 @@ def load_config():
         services = data.get("services")
         messages = data.get("messages")
         message_type = data.get("message_type")
+
+        if not services or not messages or not message_type:
+            raise ValueError(
+                "One or more of your constant variables in the config file is empty or doesn't exist"
+            )
+
         return services, messages, message_type
 
 
