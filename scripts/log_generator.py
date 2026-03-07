@@ -22,8 +22,12 @@ def load_config():
         return services, messages, message_type
 
 
-def generate_timestamp():
+def generate_log_timestamp():
     return datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def generate_runtimestamp():
+    return datetime.now(tz=UTC).strftime("%Y%m%d_%H%M%S")
 
 
 def generate_service(services):
@@ -95,12 +99,12 @@ def determine_level(response_time, messages):
 
 def generate_logs(iterations):
     directory = make_raw_directory()
-    run_timestamp = generate_timestamp()
+    run_timestamp = generate_runtimestamp()
     services, messages, message_type = load_config()
     make_service_directories(directory, services)
 
     for _ in range(iterations):
-        timestamp = generate_timestamp()
+        timestamp = generate_log_timestamp()
         service = generate_service(services)
         message = generate_message(service, messages)
         user = generate_user()
