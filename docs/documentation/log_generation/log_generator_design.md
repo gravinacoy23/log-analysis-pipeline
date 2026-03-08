@@ -34,13 +34,13 @@ The log generator simulates operational metrics typically found in backend servi
 Each log entry follows this structure:
 
 ```
-<timestamp> service=<service> user=<id> cpu=<value> mem=<value> response_time=<ms> level=<LEVEL> msg="<message>"
+timestamp=<timestamp> service=<service> user=<id> cpu=<value> mem=<value> response_time=<ms> level=<LEVEL> msg="<message>"
 ```
 
 Example:
 
 ```
-2026-03-02T18:23:11Z service=pricing user=42 cpu=73 mem=68 response_time=842 level=WARNING msg="Dynamic price applied"
+timestamp=2026-03-02T18:23:11Z service=pricing user=42 cpu=73 mem=68 response_time=842 level=WARNING msg="Dynamic price applied"
 ```
 
 ### Design Considerations

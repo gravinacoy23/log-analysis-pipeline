@@ -61,7 +61,7 @@ def write_log(target_path, service, run_timestamp, log_line):
 
 
 def format_log(timestamp, service, user, cpu, memory, response_time, level, message):
-    return f'{timestamp} service={service} user={user} cpu={cpu} mem={memory} response_time={response_time} level={level} msg="{message}"'
+    return f'timestamp={timestamp} service={service} user={user} cpu={cpu} mem={memory} response_time={response_time} level={level} msg="{message}"'
 
 
 def generate_user():
