@@ -49,12 +49,12 @@ Documentation can include:
 
 ---
 
-### 3. Prefer Simple Solutions
+### 3. Prefer learning in depth than learning fast.
 
-The goal is learning, not complexity.
+The goal is learning well all the concepts required to advance in carreer.
 
 Prefer:
-- Simple scripts
+- well written scripts
 - Readable code
 - Clear structure
 
