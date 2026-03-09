@@ -116,11 +116,17 @@ in a generic way.
 
 ## Message Cleanup
 
-The `msg` value is stored with surrounding quotes stripped using `.strip('"')`.
+The `msg` value is stripped of surrounding quotes and trailing newline
+characters using `.strip('"\n')`.
 
 ```python
-log_dict["msg"] = message.strip('"')
+log_dict["msg"] = message.strip('"\n')
 ```
+
+Both characters are stripped together because log lines read from disk
+via `readlines()` include a trailing `\n`. A naive `.strip('"')` would
+leave the newline after the closing quote, producing `'Booking confirmed"\n'`
+instead of `'Booking confirmed'`.
 
 ## Line Numbering
 
