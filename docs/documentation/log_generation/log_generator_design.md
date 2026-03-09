@@ -104,7 +104,8 @@ message_type:
 The generator is structured using small, focused functions:
 
 - `load_config()` — loads services, messages, and log levels from config.yaml
-- `generate_timestamp()` — generates current UTC timestamp
+- `generate_log_timestamp()` — generates current UTC timestamp for log content
+- `generate_runtimestamp()` — generates timestamp used for output filenames
 - `generate_service(services)` — selects a random service from config
 - `generate_message(service, message_list)` — selects a message based on service
 - `generate_user()` — generates a random user ID
@@ -181,14 +182,31 @@ Implementation uses `random.choices()` with `weights` parameter.
 
 # Execution Behavior
 
-The script includes a proper execution guard:
+The script includes a proper execution guard with `argparse` support:
 
 ```python
 if __name__ == "__main__":
-    generate_logs(100)
+    parser = argparse.ArgumentParser(
+        prog="Log generator",
+        description="Program to generate airline shopping, pricing and booking logs",
+    )
+    parser.add_argument(
+        "-c", "--count", type=int, default=1, help="number of logs you wanna generate"
+    )
+    arguments = parser.parse_args()
+    number_of_logs = arguments.count
+    generate_logs(number_of_logs)
 ```
 
 This ensures log generation runs only when the script is executed directly, not when imported as a module.
+
+The number of logs to generate is controlled via the `-c` / `--count` argument:
+
+```bash
+python scripts/log_generator.py -c 1000
+```
+
+If no argument is provided, the default is 1 log.
 
 ---
 

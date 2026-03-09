@@ -2,6 +2,7 @@ from datetime import datetime, UTC
 from pathlib import Path
 import random
 import yaml
+import argparse
 
 
 def load_config():
@@ -119,4 +120,14 @@ def generate_logs(iterations):
 
 
 if __name__ == "__main__":
-    generate_logs(100)
+    parser = argparse.ArgumentParser(
+        prog="Log generator",
+        description="Program to generate airline shopping, pricing and booking logs",
+    )
+    parser.add_argument(
+        "-c", "--count", type=int, default=1, help="number of logs you wanna generate"
+    )
+    arguments = parser.parse_args()
+    number_of_logs = arguments.count
+
+    generate_logs(number_of_logs)
