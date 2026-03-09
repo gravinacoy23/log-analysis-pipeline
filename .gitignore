@@ -24,4 +24,5 @@ output/
 *.swp
 *.swo
 
-
+#ignore personal toughts on the project
+reflexiones/
