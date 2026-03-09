@@ -12,7 +12,7 @@ def parse_logs(log_list):
         log_dict = _parse_logs_without_message(metrics, line_number)
 
         if log_dict is not None:
-            log_dict["msg"] = message.strip('"')
+            log_dict["msg"] = message.strip('"\n')
             log_dict_list.append(log_dict)
 
     return log_dict_list
@@ -34,9 +34,9 @@ def _parse_logs_without_message(logs_without_message, line_number):
 
 if __name__ == "__main__":
     log = [
-        'timestamp=2026-03-08T15:59:49Z service=booking user=80 cpu=65 mem=47 response_time=561 level=INFO msg"Seat booked"',
-        'timestamp=2026-03-08T15:59:49Z service=booking user=100 cpu=60 mem=41 response_time85 level=WARNING msg="Seat not booked"',
-        'timestamp=2026-03-08T15:59:49Z service=booking user=100 cpu=60 mem=41 response_time85 level=WARNING msg="booking failed"',
-        'timestamp=2026-03-08T15:59:49Z service=booking user=100 cpu=60 mem=41 response_time=85 level=WARNING msg="booking confirmed"',
+        'timestamp=2026-03-08T15:59:49Z service=booking user=80 cpu=65 mem=47 response_time=561 level=INFO msg"Seat booked"\n',
+        'timestamp=2026-03-08T15:59:49Z service=booking user=100 cpu=60 mem=41 response_time=85 level=WARNING msg="Seat not booked"\n',
+        'timestamp=2026-03-08T15:59:49Z service=booking user=100 cpu=60 mem=41 response_time=85 level=WARNING msg="booking failed"\n',
+        'timestamp=2026-03-08T15:59:49Z service=booking user=100 cpu=60 mem=41 response_time=85 level=WARNING msg="booking confirmed"\n',
     ]
     print(parse_logs(log))
