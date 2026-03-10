@@ -337,3 +337,25 @@ Adding `--output` would allow the user to save results to CSV or JSON without
 modifying the source code, making the pipeline more practical as a CLI tool.
 
 **Target:** Month 2 — when the pipeline starts producing formal analysis outputs.
+
+---
+
+## Log analyzer
+
+---
+
+---
+
+### 🟡 Expand metric combinations for dashboard support
+
+**Current behavior**
+The analysis layer covers a fixed set of metric combinations:
+response_time by service and CPU by log level.
+
+**Why it matters**
+A production dashboard would need more combinations — memory by service,
+error rate over time, response time trends by hour. The current functions
+are a foundation but not sufficient for full observability.
+
+**Target:** Month 2 — when the analysis layer matures and visualization
+work begins in depth.

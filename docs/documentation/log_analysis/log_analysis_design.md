@@ -78,3 +78,112 @@ ready for analysis and visualization.
   always a Series, which is the 1D building block of a DataFrame
 - Named `select_col()` instead of `filter_col()` because the operation
   selects structure, not filters rows by condition
+
+---
+
+## Function: count_by_level()
+
+### Parameters
+- `logs_dataframe` — pandas DataFrame with parsed log data
+- `level` — string representing the log level to count (e.g. "INFO", "WARNING", "ERROR")
+
+### Returns
+- `int` — number of rows matching the given log level
+
+### Implementation Details
+- Uses a boolean condition `(df["level"] == level).sum()`
+- `.sum()` counts `True` values in the boolean Series
+
+### Design Decisions
+- Preferred over `len(filter_loglevel())` because it avoids creating
+  an intermediate filtered DataFrame — the count is computed directly
+  on the boolean Series, which is more efficient and idiomatic in pandas
+
+---
+
+## Function: count_by_level_all()
+
+### Parameters
+- `logs_dataframe` — pandas DataFrame with parsed log data
+
+### Returns
+- `pd.Series` — count of log entries per level, sorted by frequency
+
+### Implementation Details
+- Uses `df.value_counts("level")`
+- Returns all levels in a single call
+
+### Design Decisions
+- Preferred over calling `count_by_level()` multiple times — one call
+  returns the full distribution, which is more useful for analysis
+
+---
+
+## Function: count_by_service()
+
+### Parameters
+- `logs_dataframe` — pandas DataFrame with parsed log data
+- `service` — string representing the service name to count
+
+### Returns
+- `int` — number of rows matching the given service
+
+### Implementation Details
+- Uses a boolean condition `(df["service"] == service).sum()`
+
+---
+
+## Function: count_by_service_all()
+
+### Parameters
+- `logs_dataframe` — pandas DataFrame with parsed log data
+
+### Returns
+- `pd.Series` — count of log entries per service, sorted by frequency
+
+### Implementation Details
+- Uses `df.value_counts("service")`
+
+---
+
+## Function: mean_rt_by_service()
+
+### Parameters
+- `logs_dataframe` — pandas DataFrame with parsed log data
+
+### Returns
+- `pd.Series` — mean response_time per service
+
+### Implementation Details
+- Uses `.groupby("service")["response_time"].mean()`
+- `.groupby()` returns a GroupBy object — the column is then selected
+  and the aggregation applied in a single chain
+
+### Design Decisions
+- response_time by service is the most operationally relevant metric —
+  it identifies which service is slowest under normal conditions
+
+---
+
+## Function: mean_cpu_by_level()
+
+### Parameters
+- `logs_dataframe` — pandas DataFrame with parsed log data
+
+### Returns
+- `pd.Series` — mean CPU usage per log level
+
+### Implementation Details
+- Uses `.groupby("level")["cpu"].mean()`
+
+### Design Decisions
+- CPU by log level connects directly to the correlation designed in
+  the log generator — ERROR and WARNING logs are expected to show
+  higher CPU usage, which this function allows us to verify
+
+---
+
+## Future Improvements (Planned)
+
+- Expand analytical functions to support a full dashboard with more
+  metric combinations (e.g. mean memory by service, error rate over time)
