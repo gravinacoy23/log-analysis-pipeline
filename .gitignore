@@ -9,6 +9,7 @@ data/raw/*
 # Virtual environments
 venv/
 .env/
+*.env
 
 # OS
 .DS_Store
@@ -26,3 +27,6 @@ output/
 
 #ignore personal toughts on the project
 reflexiones/
+
+#secret keys
+config/secrets.yaml
