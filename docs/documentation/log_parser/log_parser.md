@@ -209,7 +209,10 @@ over how and where messages are handled.
 
 # Future Improvements (Planned)
 
-- Parse `timestamp` field into a proper `datetime` object
+- ~~Parse `timestamp` field into a proper `datetime` object~~ — resolved
+  in `src/analysis/log_analysis.py` using `pd.to_datetime()`. Intentionally
+  kept out of the parser — type conversion for analysis purposes is the
+  responsibility of the analysis layer, not the parsing layer.
 - Validate that all expected fields are present before accepting a line
 - Support configurable field type mappings from `config.yaml`
 - Return parsing statistics (lines processed, lines skipped)
