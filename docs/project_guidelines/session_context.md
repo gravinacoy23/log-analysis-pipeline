@@ -1,75 +1,75 @@
 # Session Context — Log Analysis Pipeline
 
-## Estado actual del proyecto
+## Current Status
 
-Estamos en **Mes 1, Semana 1 — Sprint completado**.
-El pipeline base está funcionando de punta a punta.
+**Month 1, Week 1 — Sprint completed.**
+The base pipeline is fully functional end to end.
 
 ---
 
-## Lo que está completo
+## What is Complete
 
 ### `scripts/log_generator.py` ✅
-Generador sintético de logs con soporte para argparse.
+Synthetic log generator with argparse support.
 
-Decisiones de diseño importantes:
-- CPU influye en `response_time` — correlación realista para ML
-- `determine_level()` usa thresholds + probabilidades con `random.choices()`
-- Todas las constantes viven en `config/config.yaml` — cargadas con `yaml.safe_load()`
-- `load_config()` valida que las claves existan y no estén vacías — fail fast
-- Dos funciones de timestamp separadas: `generate_log_timestamp()` para el contenido del log, `generate_runtimestamp()` para el nombre del archivo
-- Número de logs configurable desde CLI con `-c` / `--count`
+Key design decisions:
+- CPU influences `response_time` — realistic correlation for ML
+- `determine_level()` uses thresholds + probabilities with `random.choices()`
+- All constants live in `config/config.yaml` — loaded with `yaml.safe_load()`
+- `load_config()` validates that keys exist and are not empty — fail fast
+- Two separate timestamp functions: `generate_log_timestamp()` for log content, `generate_runtimestamp()` for filenames
+- Number of logs configurable from CLI with `-c` / `--count`
 
 ### `src/ingestion/log_reader.py` ✅
-Lee el primer archivo de logs disponible para un servicio dado.
+Reads the first available log file for a given service.
 
-Decisiones de diseño importantes:
-- Recibe el nombre del servicio como string
-- Retorna una lista de strings — una por línea de log
-- Maneja dos errores con mensajes descriptivos:
-  - `ValueError` si el directorio del servicio no existe
-  - `FileNotFoundError` si el directorio está vacío
+Key design decisions:
+- Receives service name as a string
+- Returns a list of strings — one per log line
+- Handles two errors with descriptive messages:
+  - `ValueError` if the service directory does not exist
+  - `FileNotFoundError` if the directory is empty
 
 ### `src/processing/log_parser.py` ✅
-Transforma lista de strings en lista de diccionarios.
+Transforms a list of strings into a list of dictionaries.
 
-Decisiones de diseño importantes:
-- `partition(" msg=")` aísla el campo msg antes de hacer split
-- Type conversion con try/except — sin hardcodear nombres de campos
-- `strip('"\n')` limpia el mensaje de comillas y newlines
-- Líneas malformadas skipeadas con `logger.warning()` — no crashea
-- `_parse_line()` como función privada — separación de responsabilidades
-- `None` como sentinel value para líneas malformadas
+Key design decisions:
+- `partition(" msg=")` isolates the msg field before splitting
+- Type conversion with try/except — no hardcoded field names
+- `strip('"\n')` cleans message of quotes and newlines
+- Malformed lines are skipped with `logger.warning()` — pipeline does not crash
+- `_parse_line()` as a private function — separation of responsibilities
+- `None` as sentinel value for malformed lines
 
 ### `pipelines/run_pipeline.py` ✅
-Orquestador del pipeline.
+Pipeline orchestrator.
 
-Decisiones de diseño importantes:
-- Solo orquesta — no contiene lógica de negocio
-- Llama a reader → parser y retorna solo el resultado final
-- `pipelines/` es plural por diseño — preparado para escalar
+Key design decisions:
+- Orchestration only — no business logic
+- Calls reader → parser and returns only the final result
+- `pipelines/` is plural by design — ready to scale
 
 ### `main.py` ✅
-Entry point de la aplicación.
+Application entry point.
 
-Decisiones de diseño importantes:
-- `logging.basicConfig()` se configura primero — antes de argparse y de cualquier función que loggee
-- Servicio configurable desde CLI con `-s` / `--service`
-- `main()` es thin — solo llama a `run_pipeline()` y retorna resultado
+Key design decisions:
+- `logging.basicConfig()` is configured first — before argparse and before any function that logs
+- Service configurable from CLI with `-s` / `--service`
+- `main()` is thin — only calls `run_pipeline()` and returns the result
 
 ---
 
-## Log format actual
+## Current Log Format
 
 ```
 timestamp=2026-03-09T22:15:52Z service=booking user=15 cpu=35 mem=43 response_time=413 level=INFO msg="Booking failed"
 ```
 
-Todos los campos son `key=value` — formato consistente y parseable.
+All fields follow the `key=value` pattern — consistent and parseable.
 
 ---
 
-## Estructura del proyecto
+## Project Structure
 
 ```
 log-analysis-pipeline/
@@ -107,39 +107,39 @@ log-analysis-pipeline/
 
 ---
 
-## Documentación generada
+## Documentation Generated
 
-- `docs/log_generator_design.md` — v2, incluye argparse
+- `docs/log_generator_design.md` — v2, includes argparse
 - `docs/log_reader_design.md` — v1
-- `docs/log_parser_design.md` — v1, incluye manejo implícito de msg malformado
+- `docs/log_parser_design.md` — v1, includes implicit handling of malformed msg
 - `docs/run_pipeline_design.md` — v1
 - `docs/main_design.md` — v1
 
 ---
 
-## Lo que viene — Semana 2
+## What Comes Next — Week 2
 
-- Convertir la lista de dicts en un DataFrame de pandas
-- Operaciones básicas de análisis: conteos, agrupaciones, filtros
-- Primera visualización con matplotlib — bar plot de log levels
-- Introducción a tipos de datos en pandas
-
----
-
-## Perfil del estudiante
-
-- Trabaja como Critical Incident Manager
-- Aprende con WSL + Vim
-- Objetivo: Data/ML Engineering a largo plazo
-- Filosofía: profundidad sobre velocidad
+- Convert the list of dicts into a pandas DataFrame
+- Basic analysis operations: counts, groupings, filters
+- First matplotlib visualization — bar plot of log levels
+- Introduction to pandas data types
 
 ---
 
-## Reglas para el asistente (Scrum Master)
+## Student Profile
 
-- Guiar con preguntas, no dar soluciones directamente
-- Dar código solo cuando el estudiante está genuinamente atascado
-- Conectar cada tarea al proyecto principal
-- Preferir soluciones simples
-- Recordar commits y documentación cada sesión
-- No recomendar soluciones que vayan en contra de buenas prácticas de Python aunque sean más fáciles
+- Works as Critical Incident Manager
+- Learning environment: WSL + Vim
+- Long-term goal: Data / ML Engineering
+- Philosophy: depth over speed
+
+---
+
+## Assistant Rules (Scrum Master)
+
+- Guide with questions, do not give solutions directly
+- Provide code only when the student is genuinely stuck after trying
+- Connect every task to the main project
+- Prefer simple solutions
+- Remind to commit and document every session
+- Never recommend solutions that go against Python best practices, even if they are easier
