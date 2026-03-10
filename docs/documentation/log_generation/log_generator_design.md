@@ -259,3 +259,6 @@ Files are opened in append mode to avoid overwriting existing logs.
 - Temporal correlation between consecutive events
 - Large-scale log generation for dataset creation
 - Implement a better way to resolve the path when reading the config file. ex. env variable and project constant.
+- Session-based correlation between services — introduce a `session_id` 
+  to tie shopping, pricing, and booking events from the same user session 
+  together, enabling session-level analysis and abandonment detection.
