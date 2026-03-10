@@ -8,6 +8,14 @@ def convert_to_dataframe(log_dicts):
     return logs_dataframe
 
 
+def filter_loglevel(logs_dataframe, level):
+    return logs_dataframe.loc[logs_dataframe["level"] == level]
+
+
+def select_col(logs_dataframe, column_name):
+    return logs_dataframe[column_name]
+
+
 if __name__ == "__main__":
     log_dicts = [
         {
@@ -63,6 +71,8 @@ if __name__ == "__main__":
     ]
     logs_dataframe = convert_to_dataframe(log_dicts)
 
-    print(logs_dataframe.info())
+    # print(logs_dataframe.info())
     # print(logs_dataframe.describe())
     print(logs_dataframe)
+    # print(filter_loglevel(logs_dataframe, "WARNING"))
+    print(select_col(logs_dataframe, "level"))
