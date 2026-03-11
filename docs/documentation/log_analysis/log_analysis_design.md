@@ -21,8 +21,8 @@ ready for analysis and visualization.
 ### Implementation Details
 
 - DataFrame is created using `pd.DataFrame(log_dicts)`
-- `timestamp` column is converted using `pd.to_datetime()`, which
-  correctly parses the UTC timestamp and assigns dtype `datetime64[us, UTC]`
+- `timestamp` dtype is already `datetime` when it arrives — conversion
+  is handled upstream in `log_parser.py`
 
 ### Design Decisions
 

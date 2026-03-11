@@ -3,7 +3,6 @@ import pandas as pd
 
 def convert_to_dataframe(log_dicts):
     logs_dataframe = pd.DataFrame(log_dicts)
-    logs_dataframe["timestamp"] = pd.to_datetime(logs_dataframe["timestamp"])
 
     return logs_dataframe
 
@@ -105,8 +104,8 @@ if __name__ == "__main__":
     ]
     logs_dataframe = convert_to_dataframe(log_dicts)
 
-    # print(logs_dataframe.info())
+    print(logs_dataframe.info())
     # print(logs_dataframe.describe())
     print(logs_dataframe)
     # print(filter_loglevel(logs_dataframe, "WARNING"))
-    print(mean_cpu_by_level(logs_dataframe))
+    # print(mean_cpu_by_level(logs_dataframe))
