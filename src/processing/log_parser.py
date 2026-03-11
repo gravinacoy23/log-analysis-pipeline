@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,10 @@ def _parse_logs_without_message(logs_without_message, line_number):
             logger.warning(f"Malformed line skipped at line {line_number}")
             return None
         except ValueError:
-            log_dict[splitted_log[0]] = splitted_log[1]
+            if splitted_log[0] == "timestamp":
+                log_dict[splitted_log[0]] = datetime.fromisoformat(splitted_log[1])
+            else:
+                log_dict[splitted_log[0]] = splitted_log[1]
     return log_dict
 
 

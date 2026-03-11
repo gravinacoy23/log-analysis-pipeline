@@ -210,9 +210,10 @@ over how and where messages are handled.
 # Future Improvements (Planned)
 
 - ~~Parse `timestamp` field into a proper `datetime` object~~ — resolved
-  in `src/analysis/log_analysis.py` using `pd.to_datetime()`. Intentionally
-  kept out of the parser — type conversion for analysis purposes is the
-  responsibility of the analysis layer, not the parsing layer.
+  in `_parse_line()` using `datetime.fromisoformat()` from Python's
+  standard library. The parser is responsible for delivering correctly
+  typed data, not just raw strings. Using the standard library keeps
+  this conversion free of external dependencies like pandas.
 - Validate that all expected fields are present before accepting a line
 - Support configurable field type mappings from `config.yaml`
 - Return parsing statistics (lines processed, lines skipped)
