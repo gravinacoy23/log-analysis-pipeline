@@ -294,6 +294,28 @@ a summary report would make the pipeline more useful as a standalone tool.
 
 ---
 
+## Run Reporting Pipeline
+ 
+---
+ 
+### 🟡 Generalize reporting pipeline to support multiple report types
+ 
+**Current behavior**
+`report_level_pipeline()` is hardcoded to produce a single report:
+log count by level. Each new report type would require a new dedicated
+function.
+ 
+**Why it matters**
+Month 2 introduces additional analyses — log count by service, response
+time distribution, CPU analysis. The reporting pipeline will need to
+support multiple report types without duplicating the orchestration
+logic.
+ 
+**Target:** Month 2 — when the second and third report types are needed,
+the pattern for generalization will be clear.
+
+---
+
 ## Main
 
 ---
@@ -342,7 +364,6 @@ modifying the source code, making the pipeline more practical as a CLI tool.
 
 ## Log analyzer
 
----
 
 ---
 
