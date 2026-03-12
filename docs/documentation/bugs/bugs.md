@@ -319,6 +319,32 @@ convenience, not a design choice.
 
 ---
 
+### #14 — All modules: Missing docstrings and type hints
+
+**Files:** All `.py` files across the project
+
+**Current behavior:**
+Functions have no docstrings and no type hints. The reader has to
+look at the design docs or read the implementation to understand
+what a function expects and returns.
+
+**Why it matters:**
+Docstrings and type hints (PEP 484) are standard in professional
+Python. They make the code self-documenting — an IDE can show you
+what a function expects without leaving the file. For a portfolio
+project, this signals maturity.
+
+**What to do:**
+1. Choose a docstring style (Google, NumPy, or Sphinx) and use it
+   consistently across all modules.
+2. Add type hints to all function signatures — be specific where
+   possible (e.g. `dict[str, int]` instead of just `dict`).
+3. Apply to all existing functions and to all new code going forward.
+
+**Status:** [ ]
+
+---
+
 ## Summary
 
 | ID | Module | Issue | Priority |
@@ -336,6 +362,7 @@ convenience, not a design choice.
 | #11 | log_reader | `readlines()` loads all to memory | P3 |
 | #12 | log_analysis | Hardcoded test data | P3 |
 | #13 | main | Print full DataFrame | P3 |
+| #14 | All modules | Missing docstrings and type hints | P3 |
 
 ---
 
