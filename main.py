@@ -1,10 +1,12 @@
 import argparse
 import logging
 from pipelines.run_pipeline import run_pipeline
+from pipelines.run_reporting_pipeline import report_level_pipeline
 
 
 def main(service_name):
-    return run_pipeline(service_name)
+    logs_dataframe = run_pipeline(service_name)
+    report_level_pipeline(logs_dataframe)
 
 
 if __name__ == "__main__":

@@ -99,6 +99,15 @@ This makes the pipeline reusable without modifying source code.
 
 ---
 
+# Changes from v1
+ 
+- `main()` no longer returns a DataFrame — it coordinates two pipelines
+- `report_level_pipeline()` added as the second pipeline call
+- `print(main(service_name))` removed — output is now saved to disk
+  by the reporting pipeline
+ 
+---
+
 # Future Improvements (Planned)
 
 - Replace `logging.basicConfig()` with `logging.config.dictConfig()` for
