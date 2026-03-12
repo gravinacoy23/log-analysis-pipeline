@@ -9,6 +9,7 @@ def load_service_logs(service):
         raise ValueError(f"The service {service} does not exist")
 
     log_files = [file for file in log_path.iterdir() if file.is_file()]
+    log_files.sort()
 
     if not log_files:
         raise FileNotFoundError(f"There are no logs for {service}")
@@ -20,5 +21,3 @@ def load_service_logs(service):
 
 if __name__ == "__main__":
     log = load_service_logs("booking")
-
-    print(log[0])

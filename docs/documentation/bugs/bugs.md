@@ -37,7 +37,9 @@ directly violates the project's reproducibility principle.
 Decide on an explicit ordering strategy (e.g. sort by name, sort by
 modification time) and apply it before selecting the file.
 
-**Status:** [ ]
+**Status:** [Completed]
+
+Added .sort method after constructing the log_files list, in that it's sorted alphabetically and the oldest file will always be first on the list. At index 0
 
 ---
 
