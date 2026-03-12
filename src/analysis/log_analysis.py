@@ -104,8 +104,7 @@ if __name__ == "__main__":
     ]
     logs_dataframe = convert_to_dataframe(log_dicts)
 
-    print(logs_dataframe.info())
     # print(logs_dataframe.describe())
     print(logs_dataframe)
-    # print(filter_loglevel(logs_dataframe, "WARNING"))
+    print(count_by_level_all(logs_dataframe).to_dict())
     # print(mean_cpu_by_level(logs_dataframe))
