@@ -17,7 +17,7 @@ def plot_metric(metric_dict, metric_name):
 if __name__ == "__main__":
     level_dict = {
         "INFO": 3,
-        "WARNNING": 2,
+        "WARNING": 2,
         "ERROR": 1,
     }
 
