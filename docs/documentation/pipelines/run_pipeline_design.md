@@ -53,7 +53,7 @@ Orchestrates the full log ingestion and parsing pipeline for a given service.
 
 ```
 1. load_service_logs(service)  → list of raw strings
-2. parse_logs(logs_list)       → list of dicts
+2. parse_logs(logs_list)       → list of dicts parsed logs
 3. return logs_dict
 ```
 

@@ -189,7 +189,9 @@ Rename the variable to reflect that it holds a list of parsed
 dictionaries (before conversion) and ensure each variable name matches
 what it actually contains at that point in the flow.
 
-**Status:** [ ]
+**Status:** [Completed]
+
+updated variables name to better reflect what they contain `raw_logs` `parsed_logs`
 
 ---
 

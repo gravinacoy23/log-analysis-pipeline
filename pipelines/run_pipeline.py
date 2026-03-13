@@ -4,9 +4,9 @@ from src.analysis.log_analysis import convert_to_dataframe
 
 
 def run_pipeline(service):
-    logs_list = load_service_logs(service)
-    logs_dict = parse_logs(logs_list)
-    logs_dataframe = convert_to_dataframe(logs_dict)
+    raw_logs = load_service_logs(service)
+    parsed_logs = parse_logs(raw_logs)
+    logs_dataframe = convert_to_dataframe(parsed_logs)
 
     return logs_dataframe
 
