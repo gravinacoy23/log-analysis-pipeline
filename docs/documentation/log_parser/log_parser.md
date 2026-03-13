@@ -75,10 +75,10 @@ field that may contain spaces inside quoted values.
 The parser is split into two functions with distinct responsibilities:
 
 - `parse_logs(log_list)` — orchestrates iteration over all lines
-- `_parse_line(metrics, line_number)` — parses a single line's fields (private)
+- `_parse_fields(metrics, line_number)` — parses a single line's fields (private)
 
 This separation allows `parse_logs` to handle skip logic cleanly based
-on the return value of `_parse_line`.
+on the return value of `_parse_fields`.
 
 ## Message Field Isolation
 
@@ -186,7 +186,7 @@ standard Python logging pattern for library and module code.
 # Design Decisions
 
 ## `None` as sentinel value
-`_parse_line` returns `None` for malformed lines. This allows `parse_logs`
+`_parse_fields` returns `None` for malformed lines. This allows `parse_logs`
 to use a simple `if log_dict is not None` check to decide whether to
 append the result — clean and idiomatic Python.
 

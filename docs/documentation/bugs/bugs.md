@@ -39,7 +39,8 @@ modification time) and apply it before selecting the file.
 
 **Status:** [Completed]
 
-Added .sort method after constructing the log_files list, in that it's sorted alphabetically and the oldest file will always be first on the list. At index 0
+Added .sort method after constructing the log_files list, in that it's sorted 
+alphabetically and the oldest file will always be first on the list. At index 0
 
 ---
 
@@ -61,7 +62,10 @@ not "parse logs without a message".
 Choose a name that accurately describes the function's responsibility
 and update both the code and the design doc to match.
 
-**Status:** [ ]
+**Status:** [Completed]
+
+changed the name of the function to `_parse_fields()` for it to be more accurate and also,
+updated the relevant documentation to reflect the correct name. 
 
 ---
 

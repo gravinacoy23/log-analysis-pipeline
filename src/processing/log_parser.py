@@ -10,7 +10,7 @@ def parse_logs(log_list):
     for line_number, log in enumerate(log_list, start=1):
         before_message, _, message = log.partition(" msg=")
         metrics = before_message.split(" ")
-        log_dict = _parse_logs_without_message(metrics, line_number)
+        log_dict = _parse_fields(metrics, line_number)
 
         if log_dict is not None:
             log_dict["msg"] = message.strip('"\n')
@@ -19,7 +19,7 @@ def parse_logs(log_list):
     return log_dict_list
 
 
-def _parse_logs_without_message(logs_without_message, line_number):
+def _parse_fields(logs_without_message, line_number):
     log_dict = dict()
     for log in logs_without_message:
         splitted_log = log.split("=")
