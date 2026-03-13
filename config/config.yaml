@@ -36,7 +36,7 @@ messages:
     - "Booking failed"
     - "Seat booked"
 
-message_type:
+levels:
   - INFO
   - WARNING
   - ERROR

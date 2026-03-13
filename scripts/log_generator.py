@@ -15,7 +15,7 @@ def load_config():
         if (
             not data.get("services")
             or not data.get("messages")
-            or not data.get("message_type")
+            or not data.get("levels")
         ):
             raise ValueError(
                 "One or more of your constant variables in the config file is empty or doesn't exist"
@@ -87,15 +87,15 @@ def generate_response_time(cpu):
         return random.randint(801, 1200)
 
 
-def determine_level(response_time, messages):
+def determine_level(response_time, levels):
     if response_time < 600:
-        level = random.choices(messages, weights=[1, 0, 0])
+        level = random.choices(levels, weights=[1, 0, 0])
         return level[0]
     elif 600 <= response_time < 900:
-        level = random.choices(messages, weights=[0.8, 0.2, 0])
+        level = random.choices(levels, weights=[0.8, 0.2, 0])
         return level[0]
     else:
-        level = random.choices(messages, weights=[0, 0.5, 0.5])
+        level = random.choices(levels, weights=[0, 0.5, 0.5])
         return level[0]
 
 
@@ -105,7 +105,7 @@ def generate_logs(iterations):
     raw_data = load_config()
     services = raw_data["services"]
     messages = raw_data["messages"]
-    message_type = raw_data["message_type"]
+    levels = raw_data["levels"]
     make_service_directories(directory, services)
 
     for _ in range(iterations):
@@ -116,7 +116,7 @@ def generate_logs(iterations):
         memory = generate_memory()
         cpu = generate_cpu()
         response_time = generate_response_time(cpu)
-        level = determine_level(response_time, message_type)
+        level = determine_level(response_time, levels)
         log = format_log(
             timestamp, service, user, cpu, memory, response_time, level, message
         )
