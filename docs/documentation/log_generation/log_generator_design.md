@@ -63,7 +63,7 @@ All constants (services, messages, log levels) are externalized to `config/confi
 
 This follows the principle of separating configuration from logic.
 
-The generator loads configuration at runtime using `load_config()`, which reads the YAML file using `yaml.safe_load()`.
+The generator loads configuration at runtime using `_load_config()`, which reads the YAML file using `yaml.safe_load()`.
 
 `safe_load()` is used instead of `yaml.load()` because it only parses data and never executes arbitrary code, making it safe for production-oriented systems.
 
@@ -103,21 +103,21 @@ message_type:
 
 The generator is structured using small, focused functions:
 
-- `load_config()` — loads services, messages, and log levels from config.yaml
-- `generate_log_timestamp()` — generates current UTC timestamp for log content
-- `generate_runtimestamp()` — generates timestamp used for output filenames
-- `generate_service(services)` — selects a random service from config
-- `generate_message(service, message_list)` — selects a message based on service
-- `generate_user()` — generates a random user ID
-- `generate_cpu()` — generates a random CPU usage value
-- `generate_memory()` — generates a random memory usage value
-- `generate_response_time(cpu)` — generates response time correlated with CPU load
-- `determine_level(response_time, message_type)` — determines log level based on response time thresholds and probabilities
-- `format_log(...)` — builds the final log line string
-- `make_raw_directory()` — creates `data/raw/` if it does not exist
-- `make_service_directories(raw_dir, services)` — creates per-service subdirectories
-- `write_log(target_path, service, run_timestamp, log_line)` — persists log line to disk
-- `generate_logs(iterations)` — orchestrates the full generation pipeline
+- `_load_config()` — loads services, messages, and log levels from config.yaml
+- `_generate_log_timestamp()` — generates current UTC timestamp for log content
+- `_generate_runtimestamp()` — generates timestamp used for output filenames
+- `_generate_service(services)` — selects a random service from config
+- `_generate_message(service, message_list)` — selects a message based on service
+- `_generate_user()` — generates a random user ID
+- `_generate_cpu()` — generates a random CPU usage value
+- `_generate_memory()` — generates a random memory usage value
+- `_generate_response_time(cpu)` — generates response time correlated with CPU load
+- `_determine_level(response_time, message_type)` — determines log level based on response time thresholds and probabilities
+- `_format_log(...)` — builds the final log line string
+- `_make_raw_directory()` — creates `data/raw/` if it does not exist
+- `_make_service_directories(raw_dir, services)` — creates per-service subdirectories
+- `_write_log(target_path, service, run_timestamp, log_line)` — persists log line to disk
+- `_generate_logs(iterations)` — orchestrates the full generation pipeline
 
 ---
 
@@ -128,7 +128,7 @@ The generator is structured using small, focused functions:
 Generated randomly between 30 and 70.
 
 ```python
-def generate_cpu():
+def _generate_cpu():
     return random.randint(30, 70)
 ```
 
@@ -160,7 +160,7 @@ Generated randomly between 1 and 100.
 
 Log level is a **consequence** of system metrics, not an independent random value.
 
-`determine_level(response_time, message_type)` evaluates response time against thresholds and applies weighted probabilities to simulate realistic variability.
+`_determine_level(response_time, message_type)` evaluates response time against thresholds and applies weighted probabilities to simulate realistic variability.
 
 ```
 response_time < 600      → 100% INFO
@@ -218,7 +218,7 @@ Creates `data/raw/` dynamically if it does not exist.
 
 Uses `pathlib` for OS-independent path resolution. Resolves the project root using `__file__` to ensure portability across environments including Docker.
 
-## `make_service_directories(raw_dir, services)`
+## `_make_service_directories(raw_dir, services)`
 
 Creates one subdirectory per service inside `data/raw/`.
 
@@ -235,7 +235,7 @@ Services are read from config, not hardcoded.
 
 # Log Persistence
 
-## `write_log(target_path, service, run_timestamp, log_line)`
+## `_write_log(target_path, service, run_timestamp, log_line)`
 
 Each execution run writes to a timestamped file per service:
 
