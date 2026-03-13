@@ -138,7 +138,10 @@ Rename the parameter to reflect what it actually contains. Also consider
 whether the config key `message_type` should be renamed for the same
 reason (this one can be deferred).
 
-**Status:** [ ]
+**Status:** [Completed]
+
+Variable name changed to `levels` from the config.yaml till the call in 
+log_generation
 
 ---
 
@@ -162,7 +165,9 @@ Consider separating the setup phase (directories, config, timestamp)
 from the generation loop. The orchestrator should connect steps, not
 perform them.
 
-**Status:** [ ]
+**Status:** [Completed]
+
+Abstracted the responsability to loop over the log generation to a separate funcition called `_generator_loop()`
 
 ---
 

@@ -99,13 +99,10 @@ def determine_level(response_time, levels):
         return level[0]
 
 
-def generate_logs(iterations):
-    directory = make_raw_directory()
-    run_timestamp = generate_runtimestamp()
-    raw_data = load_config()
+def _generator_loop(iterations, raw_data, directory, run_timestamp):
     services = raw_data["services"]
-    messages = raw_data["messages"]
     levels = raw_data["levels"]
+    messages = raw_data["messages"]
     make_service_directories(directory, services)
 
     for _ in range(iterations):
@@ -121,6 +118,15 @@ def generate_logs(iterations):
             timestamp, service, user, cpu, memory, response_time, level, message
         )
         write_log(directory, service, run_timestamp, log)
+
+
+def generate_logs(iterations):
+    directory = make_raw_directory()
+    run_timestamp = generate_runtimestamp()
+    raw_data = load_config()
+    make_service_directories(directory, raw_data["services"])
+
+    _generator_loop(iterations, raw_data, directory, run_timestamp)
 
 
 if __name__ == "__main__":
