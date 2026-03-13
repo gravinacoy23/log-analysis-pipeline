@@ -141,7 +141,7 @@ reference the correct line.
 ## Malformed Lines
 
 A line is considered malformed if any field cannot be split into a
-`key=value` pair — specifically when `splitted_log[1]` raises an
+`key=value` pair — specifically when `split_log[1]` raises an
 `IndexError`.
 
 When a malformed line is detected:

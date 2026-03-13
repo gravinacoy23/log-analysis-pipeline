@@ -86,7 +86,9 @@ variable naming affect the impression your code makes.
 Rename to something accurate. Consider what the variable actually
 holds when choosing the new name.
 
-**Status:** [ ]
+**Status:** [Completed]
+
+Changed variable name to `split_log`
 
 ---
 
