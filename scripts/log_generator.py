@@ -11,16 +11,17 @@ def load_config():
 
     with config_file.open("r") as f:
         data = yaml.safe_load(f)
-        services = data.get("services")
-        messages = data.get("messages")
-        message_type = data.get("message_type")
 
-        if not services or not messages or not message_type:
+        if (
+            not data.get("services")
+            or not data.get("messages")
+            or not data.get("message_type")
+        ):
             raise ValueError(
                 "One or more of your constant variables in the config file is empty or doesn't exist"
             )
 
-        return services, messages, message_type
+        return data
 
 
 def generate_log_timestamp():
@@ -101,7 +102,10 @@ def determine_level(response_time, messages):
 def generate_logs(iterations):
     directory = make_raw_directory()
     run_timestamp = generate_runtimestamp()
-    services, messages, message_type = load_config()
+    raw_data = load_config()
+    services = raw_data["services"]
+    messages = raw_data["messages"]
+    message_type = raw_data["message_type"]
     make_service_directories(directory, services)
 
     for _ in range(iterations):

@@ -113,7 +113,9 @@ introduces bugs. This pattern does not scale.
 Think about what data structure would let you add config fields without
 breaking existing code. Consider what Python provides for this.
 
-**Status:** [ ]
+**Status:** [Completed]
+Removed the variable asignation and we are returning the dictionary that safe_load already provides,
+using .get() built in method in order to check that the service is not empty.
 
 ---
 
