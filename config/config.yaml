@@ -40,3 +40,13 @@ levels:
   - INFO
   - WARNING
   - ERROR
+
+columns:
+  - timestamp
+  - service
+  - user
+  - cpu
+  - mem
+  - response_time
+  - level
+  - msg
