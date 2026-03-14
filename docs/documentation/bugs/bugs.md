@@ -217,9 +217,14 @@ attempting conversion, so that the `except` path only handles truly
 unexpected situations. Consider `str.isdigit()` or similar approaches
 and their trade-offs.
 
-**Status:** [ ]
+**Status:** [Completed]
 
 ---
+Changed the logic of how to handle the errors. First I check if the log list
+has a len less than 2, then I return none  and log the malformed line.
+
+Then I used the `str.isdigit()` to check if we have a number instead of using
+an exception. and lastly I check if it's a date, otherwise store as string.
 
 ## P3 — Good Improvements, Lower Urgency
 

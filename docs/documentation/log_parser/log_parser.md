@@ -1,4 +1,4 @@
-# Log Parser — Implementation (v1)
+# Log Parser — Implementation (v2)
 
 ## Objective
 
@@ -75,7 +75,8 @@ field that may contain spaces inside quoted values.
 The parser is split into two functions with distinct responsibilities:
 
 - `parse_logs(log_list)` — orchestrates iteration over all lines
-- `_parse_fields(metrics, line_number)` — parses a single line's fields (private)
+- `_parse_fields(fields, line_number)` — parses a single line's
+  key=value fields (private)
 
 This separation allows `parse_logs` to handle skip logic cleanly based
 on the return value of `_parse_fields`.
@@ -99,20 +100,36 @@ before_message, _, message = log.partition(" msg=")
 After isolating the message, the remaining fields are split by space.
 Each `key=value` pair is then split by `=` to extract the key and value.
 
-## Type Conversion
+## Type Detection and Conversion
 
-Numeric fields are cast to `int` automatically using a try/except pattern.
-Fields that cannot be converted to `int` are stored as strings.
+Type detection uses a guard clause followed by explicit checks instead
+of relying on exceptions for control flow.
+
+For each field, the logic follows this order:
+
+1. **Guard clause** — if `split_log` has fewer than 2 elements, the line
+   is malformed. Log a warning and return `None` immediately.
+2. **Numeric check** — if the value is numeric (`str.isdigit()`), convert
+   to `int`.
+3. **Timestamp check** — if the key is `"timestamp"`, parse with
+   `datetime.fromisoformat()`.
+4. **Default** — store as string.
 
 ```python
-try:
-    log_dict[key] = int(value)
-except ValueError:
-    log_dict[key] = value
+if len(split_log) < 2:
+    logger.warning(f"Malformed line skipped at line {line_number}")
+    return None
+
+if split_log[1].isdigit():
+    log_dict[split_log[0]] = int(split_log[1])
+elif split_log[0] == "timestamp":
+    log_dict[split_log[0]] = datetime.fromisoformat(split_log[1])
+else:
+    log_dict[split_log[0]] = split_log[1]
 ```
 
-This avoids hardcoding which fields are numeric and handles the format
-in a generic way.
+The guard clause is a separate `if` from the type detection chain
+because they represent different concerns — validation vs assignment.
 
 ## Message Cleanup
 
@@ -131,7 +148,7 @@ instead of `'Booking confirmed'`.
 ## Line Numbering
 
 `enumerate(log_list, start=1)` is used to track the human-readable line
-number. This is passed to `_parse_line` so that warning messages
+number. This is passed to `_parse_fields` so that warning messages
 reference the correct line.
 
 ---
@@ -141,19 +158,15 @@ reference the correct line.
 ## Malformed Lines
 
 A line is considered malformed if any field cannot be split into a
-`key=value` pair — specifically when `split_log[1]` raises an
-`IndexError`.
+`key=value` pair — detected by checking `len(split_log) < 2`.
 
 When a malformed line is detected:
 - A `WARNING` is logged identifying the line number
-- `_parse_line` returns `None`
+- `_parse_fields` returns `None`
 - `parse_logs` skips the line and continues processing
 
-```python
-except IndexError:
-    logger.warning(f"Malformed line skipped at line {line_number}")
-    return None
-```
+This uses a guard clause pattern (early return) instead of exception
+handling, which is cleaner for expected validation logic.
 
 ## Implicit Handling of Malformed `msg` Field
 
@@ -162,8 +175,8 @@ A malformed `msg` field — for example `msg"Seat booked"` instead of
 
 `str.partition(" msg=")` does not find the separator and returns the
 full line as the first element unchanged. The malformed `msg"Seat booked"`
-token then reaches `_parse_line` as a field without a valid `=` separator,
-triggering the same `IndexError` path as any other malformed field.
+token then reaches `_parse_fields` as a field without a valid `=`
+separator, triggering the same guard clause as any other malformed field.
 
 This is an example of implicit error coverage — the general malformation
 logic handles a specific edge case without requiring dedicated code.
@@ -185,19 +198,37 @@ standard Python logging pattern for library and module code.
 
 # Design Decisions
 
+## Guard clause over exception handling for validation
+Malformed fields are detected using `len()` instead of catching
+`IndexError`. Exceptions should signal unexpected conditions, not serve
+as the primary branching mechanism. The guard clause makes the validation
+explicit and readable.
+
+## `isdigit()` over try/except for type detection
+Numeric detection uses `str.isdigit()` instead of attempting `int()`
+and catching `ValueError`. This keeps exceptions for truly unexpected
+situations and uses normal control flow for expected branching.
+
+## Separate concerns in conditional blocks
+The guard clause (`if len < 2`) is a separate `if` statement from the
+type detection chain (`if isdigit / elif timestamp / else`). The guard
+handles validation and exits early. The chain handles assignment logic.
+Mixing them in a single `if/elif` would conflate two different concerns.
+
 ## `None` as sentinel value
-`_parse_fields` returns `None` for malformed lines. This allows `parse_logs`
-to use a simple `if log_dict is not None` check to decide whether to
-append the result — clean and idiomatic Python.
+`_parse_fields` returns `None` for malformed lines. This allows
+`parse_logs` to use a simple `if log_dict is not None` check to decide
+whether to append the result — clean and idiomatic Python.
 
 ## Private function convention
-`_parse_line` is prefixed with `_` to signal it is an internal
+`_parse_fields` is prefixed with `_` to signal it is an internal
 implementation detail, not part of the public interface of the module.
 
 ## No hardcoded field names
-Type conversion uses try/except rather than an explicit list of numeric
-fields. This makes the parser more resilient to minor format changes
-without requiring updates to a field registry.
+Type detection does not rely on a list of numeric field names. Instead,
+`isdigit()` detects numeric values generically. This makes the parser
+resilient to minor format changes without requiring updates to a field
+registry.
 
 ## Logging over print
 `logger.warning()` is used instead of `print()` for malformed line
@@ -207,10 +238,23 @@ over how and where messages are handled.
 
 ---
 
+# Changes from v1
+
+- `_parse_logs_without_message()` renamed to `_parse_fields()` — reflects
+  what the function actually does (parse key=value fields)
+- `splitted_log` renamed to `split_log` — corrected English grammar
+- Malformed line detection changed from `IndexError` exception to
+  `len()` guard clause
+- Numeric detection changed from `try int() / except ValueError` to
+  `str.isdigit()` check
+- Guard clause separated from type detection logic into its own `if` block
+
+---
+
 # Future Improvements (Planned)
 
 - ~~Parse `timestamp` field into a proper `datetime` object~~ — resolved
-  in `_parse_line()` using `datetime.fromisoformat()` from Python's
+  in `_parse_fields()` using `datetime.fromisoformat()` from Python's
   standard library. The parser is responsible for delivering correctly
   typed data, not just raw strings. Using the standard library keeps
   this conversion free of external dependencies like pandas.

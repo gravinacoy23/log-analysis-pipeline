@@ -23,16 +23,18 @@ def _parse_fields(logs_without_message, line_number):
     log_dict = dict()
     for log in logs_without_message:
         split_log = log.split("=")
-        try:
-            log_dict[split_log[0]] = int(split_log[1])
-        except IndexError:
+
+        if len(split_log) < 2:
             logger.warning(f"Malformed line skipped at line {line_number}")
             return None
-        except ValueError:
-            if split_log[0] == "timestamp":
-                log_dict[split_log[0]] = datetime.fromisoformat(split_log[1])
-            else:
-                log_dict[split_log[0]] = split_log[1]
+
+        if split_log[1].isdigit():
+            log_dict[split_log[0]] = int(split_log[1])
+        elif split_log[0] == "timestamp":
+            log_dict[split_log[0]] = datetime.fromisoformat(split_log[1])
+        else:
+            log_dict[split_log[0]] = split_log[1]
+
     return log_dict
 
 
