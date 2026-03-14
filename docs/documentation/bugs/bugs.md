@@ -276,7 +276,16 @@ This connects to Month 2 work on data quality. For now, note it as a
 gap. When you build the validation layer, apply it consistently across
 all modules.
 
-**Status:** [ ]
+**Status:** [Completed]
+
+added the validation with the following actions:
+
+1. Added a new field to the config with all the expected column names
+2. created a new module to load the config `config_loader.py`
+3. added a new function to analysis layer so it validates that all the 
+    columns received from the parsed logs are in the ones in the config
+    file.
+4. fails if a column is missing.
 
 ---
 

@@ -1,7 +1,22 @@
 import pandas as pd
 
 
-def convert_to_dataframe(log_dicts):
+def _verify_columns(log_dicts, expected_columns):
+
+    if not log_dicts:
+        raise ValueError("The parsed logs list is empty")
+
+    current_columns = log_dicts[0].keys()
+
+    for column_name in expected_columns:
+        if column_name not in current_columns:
+            raise ValueError(
+                f"The required column {column_name} is missing in the parsed logs."
+            )
+
+
+def convert_to_dataframe(log_dicts, expected_columns):
+    _verify_columns(log_dicts, expected_columns)
     logs_dataframe = pd.DataFrame(log_dicts)
 
     return logs_dataframe
@@ -102,9 +117,16 @@ if __name__ == "__main__":
             "msg": "Seat booked",
         },
     ]
-    logs_dataframe = convert_to_dataframe(log_dicts)
 
-    # print(logs_dataframe.describe())
-    print(logs_dataframe)
-    print(count_by_level_all(logs_dataframe).to_dict())
-    # print(mean_cpu_by_level(logs_dataframe))
+    expected_columns = [
+        "timestamp",
+        "service",
+        "user",
+        "cpu",
+        "mem",
+        "response_time",
+        "level",
+        "msg",
+    ]
+
+    logs_dataframe = convert_to_dataframe(log_dicts, expected_columns)

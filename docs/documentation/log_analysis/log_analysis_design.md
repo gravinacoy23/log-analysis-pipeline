@@ -1,10 +1,46 @@
-# Log Analysis Module — Design (v1)
+# Log Analysis Module — Design (v2)
 
 ## Objective
 
 Provide the analytical layer of the pipeline.
 Receives structured log data and converts it into a pandas DataFrame
-ready for analysis and visualization.
+ready for analysis and visualization. Validates that required columns
+are present before creating the DataFrame.
+
+---
+
+## Function: _verify_columns()
+
+### Parameters
+
+- `log_dicts` — list of dictionaries, one per parsed log line
+- `expected_columns` — list of strings with the required column names
+
+### Returns
+
+- None — raises an error if validation fails
+
+### Implementation Details
+
+- Checks that `log_dicts` is not empty — an empty list cannot produce
+  a valid DataFrame
+- Extracts column names from the first dict in the list using `.keys()`
+- Iterates over `expected_columns` and raises a `ValueError` if any
+  required column is missing
+
+### Design Decisions
+
+- **Private function.** Validation is an internal step of DataFrame
+  creation, not part of the public interface. Callers use
+  `convert_to_dataframe()` which handles validation internally.
+- **Expected columns come from the caller, not from config.**
+  `_verify_columns()` does not know about `config.yaml` — it receives
+  the list of expected columns as a parameter. This keeps the analysis
+  layer decoupled from the config system. The pipeline orchestrator is
+  responsible for loading config and passing the columns.
+- **Fail fast.** If a required column is missing, the function raises
+  immediately with a descriptive message rather than letting pandas
+  produce a confusing error downstream.
 
 ---
 
@@ -13,6 +49,7 @@ ready for analysis and visualization.
 ### Parameters
 
 - `log_dicts` — list of dictionaries, one per parsed log line
+- `expected_columns` — list of strings with the required column names
 
 ### Returns
 
@@ -20,17 +57,19 @@ ready for analysis and visualization.
 
 ### Implementation Details
 
+- Calls `_verify_columns()` before creating the DataFrame
 - DataFrame is created using `pd.DataFrame(log_dicts)`
 - `timestamp` dtype is already `datetime` when it arrives — conversion
   is handled upstream in `log_parser.py`
 
 ### Design Decisions
 
-- Type conversion is handled inside this function, not in the parser.
-  The parser is responsible for structure, not for analysis-ready types.
-- `timestamp` is converted to datetime because time-based analysis
-  (grouping by hour, filtering by range) requires a proper datetime dtype,
-  not a string.
+- Validation happens before DataFrame creation — if columns are missing
+  or the input is empty, no DataFrame is created
+- `expected_columns` is passed by the pipeline orchestrator, which loads
+  it from `config.yaml` via `config_loader.py`
+
+---
 
 ## Function: filter_loglevel()
 
@@ -180,6 +219,18 @@ ready for analysis and visualization.
 - CPU by log level connects directly to the correlation designed in
   the log generator — ERROR and WARNING logs are expected to show
   higher CPU usage, which this function allows us to verify
+
+---
+
+## Changes from v1
+
+- Added `_verify_columns()` — validates required columns before
+  DataFrame creation
+- `convert_to_dataframe()` now receives `expected_columns` as a
+  second parameter, passed by the pipeline orchestrator
+- Validation covers two cases: empty input list and missing columns
+- Column names are config-driven — loaded from `config.yaml` by
+  the pipeline, not hardcoded in the analysis layer
 
 ---
 
