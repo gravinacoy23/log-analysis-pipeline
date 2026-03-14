@@ -250,7 +250,11 @@ Consider how to keep the file handle open for the duration of a batch
 without losing the clean separation of `write_log()`. This may require
 rethinking who owns the file handle.
 
-**Status:** [ ]
+**Status:** [Completed]
+Abstracted the responsability to open the file, create the handler and 
+close file to two separate auxiliary functions `_create_file()` and 
+`_close_file()` now `_write_log()` only takes as a parameter a dict of
+handlers, the name of the service and the log line to write the log.
 
 ---
 

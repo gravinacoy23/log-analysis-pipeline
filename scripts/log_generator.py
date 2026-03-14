@@ -55,11 +55,26 @@ def _make_service_directories(raw_dir, services):
         service_dir.mkdir(parents=True, exist_ok=True)
 
 
-def _write_log(target_path, service, run_timestamp, log_line):
-    log_file = target_path / service / f"{service}_{run_timestamp}.log"
+def _create_files(services, target_path, run_timestamp):
+    file_handles = dict()
+    for service in services:
+        log_file = target_path / service / f"{service}_{run_timestamp}.log"
+        handler = log_file.open("a", encoding="utf-8")
 
-    with log_file.open("a", encoding="utf-8") as f:
-        f.write(log_line + "\n")
+        file_handles[service] = handler
+
+    return file_handles
+
+
+def _close_files(file_handles):
+    for handle in file_handles.values():
+        handle.close()
+
+
+def _write_log(file_handles, service, log_line):
+    handle = file_handles[service]
+
+    handle.write(log_line + "\n")
 
 
 def _format_log(timestamp, service, user, cpu, memory, response_time, level, message):
@@ -99,11 +114,10 @@ def _determine_level(response_time, levels):
         return level[0]
 
 
-def _generator_loop(iterations, raw_data, directory, run_timestamp):
+def _generator_loop(iterations, raw_data, file_handles):
     services = raw_data["services"]
     levels = raw_data["levels"]
     messages = raw_data["messages"]
-    _make_service_directories(directory, services)
 
     for _ in range(iterations):
         timestamp = _generate_log_timestamp()
@@ -117,7 +131,7 @@ def _generator_loop(iterations, raw_data, directory, run_timestamp):
         log = _format_log(
             timestamp, service, user, cpu, memory, response_time, level, message
         )
-        _write_log(directory, service, run_timestamp, log)
+        _write_log(file_handles, service, log)
 
 
 def generate_logs(iterations):
@@ -125,8 +139,11 @@ def generate_logs(iterations):
     run_timestamp = _generate_runtimestamp()
     raw_data = _load_config()
     _make_service_directories(directory, raw_data["services"])
+    file_handles = _create_files(raw_data["services"], directory, run_timestamp)
 
-    _generator_loop(iterations, raw_data, directory, run_timestamp)
+    _generator_loop(iterations, raw_data, file_handles)
+
+    _close_files(file_handles)
 
 
 if __name__ == "__main__":

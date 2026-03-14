@@ -1,4 +1,4 @@
-# Log Generator — Implementation (v2)
+# Log Generator — Implementation (v3)
 
 ## Objective
 
@@ -9,7 +9,7 @@ The goal of this phase is to:
 - Define a consistent and parseable log format
 - Build a modular log generation structure
 - Generate valid log lines for multiple services
-- Persist generated logs to disk
+- Persist generated logs to disk efficiently
 - Introduce realistic correlations between system metrics
 - Prepare the foundation for future ML pipelines
 
@@ -89,35 +89,104 @@ messages:
     - "Booking failed"
     - "Seat booked"
 
-message_type:
+levels:
   - INFO
   - WARNING
   - ERROR
 ```
 
+### Return Format
+
+`_load_config()` returns the config as a dictionary. This allows adding
+new config fields without breaking existing code — callers access values
+by key (`config["services"]`) instead of relying on positional unpacking.
+
+Validation uses `.get()` to check that required keys exist and are not
+empty before returning the dict. If a key is missing or falsy, a
+descriptive `ValueError` is raised immediately.
+
 ---
 
 # Implementation Details
 
-## Modular Functions
+## Module Structure
 
-The generator is structured using small, focused functions:
+The generator has one public function and multiple private helpers:
 
-- `_load_config()` — loads services, messages, and log levels from config.yaml
-- `_generate_log_timestamp()` — generates current UTC timestamp for log content
-- `_generate_runtimestamp()` — generates timestamp used for output filenames
+### Public Interface
+- `generate_logs(iterations)` — entry point, orchestrates the full
+  generation pipeline
+
+### Private Functions — Setup
+- `_load_config()` — loads and validates config from config.yaml,
+  returns a dict
+- `_make_raw_directory()` — creates `data/raw/` if it does not exist
+- `_make_service_directories(raw_dir, services)` — creates per-service
+  subdirectories
+- `_create_files(services, target_path, run_timestamp)` — opens one
+  file per service and returns a dict of file handles
+- `_close_files(file_handles)` — closes all open file handles
+
+### Private Functions — Generation
+- `_generate_log_timestamp()` — generates current UTC timestamp for
+  log content
+- `_generate_runtimestamp()` — generates timestamp used for output
+  filenames
 - `_generate_service(services)` — selects a random service from config
-- `_generate_message(service, message_list)` — selects a message based on service
+- `_generate_message(service, message_list)` — selects a message based
+  on service
 - `_generate_user()` — generates a random user ID
 - `_generate_cpu()` — generates a random CPU usage value
 - `_generate_memory()` — generates a random memory usage value
-- `_generate_response_time(cpu)` — generates response time correlated with CPU load
-- `_determine_level(response_time, message_type)` — determines log level based on response time thresholds and probabilities
+- `_generate_response_time(cpu)` — generates response time correlated
+  with CPU load
+- `_determine_level(response_time, levels)` — determines log level
+  based on response time thresholds and probabilities
 - `_format_log(...)` — builds the final log line string
-- `_make_raw_directory()` — creates `data/raw/` if it does not exist
-- `_make_service_directories(raw_dir, services)` — creates per-service subdirectories
-- `_write_log(target_path, service, run_timestamp, log_line)` — persists log line to disk
-- `_generate_logs(iterations)` — orchestrates the full generation pipeline
+
+### Private Functions — Persistence
+- `_write_log(file_handles, service, log_line)` — writes a log line
+  to the correct file using the service name as key
+
+### Orchestration
+- `_generator_loop(iterations, raw_data, file_handles)` — runs the
+  generation loop, producing one log per iteration
+
+All helper functions are prefixed with `_` to signal they are internal
+to the module. Only `generate_logs()` is part of the public interface.
+
+---
+
+## Orchestration — generate_logs()
+
+`generate_logs()` is the entry point. It handles the full lifecycle:
+
+1. **Setup** — create directories, load config, generate run timestamp
+2. **Open files** — create one file handle per service
+3. **Generate** — delegate to `_generator_loop()`
+4. **Cleanup** — close all file handles
+
+```
+generate_logs(iterations)
+    → _make_raw_directory()
+    → _load_config()
+    → _make_service_directories()
+    → _create_files()
+    → _generator_loop()
+    → _close_files()
+```
+
+This separation ensures setup and cleanup live in the orchestrator,
+while the loop only generates logs.
+
+## Generation Loop — _generator_loop()
+
+The loop produces one log per iteration. Each iteration:
+1. Generates all fields (timestamp, service, metrics, level, message)
+2. Formats the log line
+3. Writes to the correct file via `_write_log()`
+
+The loop does not perform setup, file management, or cleanup.
 
 ---
 
@@ -126,11 +195,6 @@ The generator is structured using small, focused functions:
 ## CPU
 
 Generated randomly between 30 and 70.
-
-```python
-def _generate_cpu():
-    return random.randint(30, 70)
-```
 
 ## Response Time — Correlated with CPU
 
@@ -160,7 +224,7 @@ Generated randomly between 1 and 100.
 
 Log level is a **consequence** of system metrics, not an independent random value.
 
-`_determine_level(response_time, message_type)` evaluates response time against thresholds and applies weighted probabilities to simulate realistic variability.
+`_determine_level(response_time, levels)` evaluates response time against thresholds and applies weighted probabilities to simulate realistic variability.
 
 ```
 response_time < 600      → 100% INFO
@@ -212,7 +276,7 @@ If no argument is provided, the default is 1 log.
 
 # Directory Management
 
-## `make_raw_directory()`
+## `_make_raw_directory()`
 
 Creates `data/raw/` dynamically if it does not exist.
 
@@ -235,7 +299,21 @@ Services are read from config, not hardcoded.
 
 # Log Persistence
 
-## `_write_log(target_path, service, run_timestamp, log_line)`
+## File Handle Management
+
+File handles are managed with a lifecycle approach:
+
+1. `_create_files()` opens one file per service before the generation
+   loop starts, storing the handles in a dict keyed by service name
+2. `_write_log()` accesses the correct handle using the service name
+   as key and writes a single line
+3. `_close_files()` closes all handles after the loop completes
+
+This avoids opening and closing files on every write — with 1000 logs,
+the previous approach performed 1000 open/close cycles. The current
+approach opens 3 files once and closes them once.
+
+### File Naming
 
 Each execution run writes to a timestamped file per service:
 
@@ -251,6 +329,21 @@ Files are opened in append mode to avoid overwriting existing logs.
 
 ---
 
+# Changes from v2
+
+- `load_config()` now returns a dict instead of a tuple — adding new
+  config fields no longer breaks existing call sites
+- Config key `message_type` renamed to `levels` — consistent naming
+  throughout the module
+- `determine_level()` parameter renamed from `messages` to `levels`
+- `generate_logs()` refactored into setup orchestrator +
+  `_generator_loop()` — clear separation of concerns
+- File I/O changed from open/close per write to lifecycle-managed
+  file handles with `_create_files()` / `_write_log()` / `_close_files()`
+- All helper functions prefixed with `_` to signal private scope
+
+---
+
 # Future Improvements (Planned)
 
 - Memory usage as a second factor influencing response time
@@ -259,6 +352,6 @@ Files are opened in append mode to avoid overwriting existing logs.
 - Temporal correlation between consecutive events
 - Large-scale log generation for dataset creation
 - Implement a better way to resolve the path when reading the config file. ex. env variable and project constant.
-- Session-based correlation between services — introduce a `session_id` 
-  to tie shopping, pricing, and booking events from the same user session 
+- Session-based correlation between services — introduce a `session_id`
+  to tie shopping, pricing, and booking events from the same user session
   together, enabling session-level analysis and abandonment detection.
