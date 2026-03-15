@@ -15,8 +15,8 @@ def load_service_logs(service):
         raise FileNotFoundError(f"There are no logs for {service}")
 
     with log_files[0].open("r") as file:
-        data = file.readlines()
-        return data
+        for line in file:
+            yield line
 
 
 if __name__ == "__main__":

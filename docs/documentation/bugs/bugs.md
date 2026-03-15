@@ -308,7 +308,11 @@ revisit whether the reader should yield lines instead of returning a
 full list. This connects to Python generators — a concept worth learning
 deeply.
 
-**Status:** [ ]
+**Status:** [Completed]
+
+Solutioned using a for loop that iterates over each line at a time and 
+`yield`s it's content for the parser to iterate over the generator that 
+the function returns.
 
 ---
 

@@ -80,11 +80,13 @@ Only files are included — subdirectories are excluded via `is_file()`.
 
 ## Return Format
 
-Returns a list of raw strings using `readlines()`. Each string
-represents one log line including the newline character at the end.
-
-This format is intentional — the parser receives the list and processes
-each line independently.
+Uses yield to deliver one log line at a time as a generator. Each
+string represents one log line including the newline character at the
+end. This approach avoids loading the entire file into memory — lines
+are delivered on demand as the caller iterates.
+The parser receives the generator and processes each line independently.
+Because Python's for loop works with any iterable, the parser does
+not need to know whether it receives a list or a generator.
 
 ## Error Handling
 
