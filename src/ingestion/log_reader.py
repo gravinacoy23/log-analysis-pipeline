@@ -10,6 +10,10 @@ def load_service_logs(service: str) -> Iterator[str]:
 
     Returns:
         Returns a generator containing all the log lines.
+
+    Raises:
+        ValueError: When the directory for the requested service does not exist.
+        FileNotFoundError: When the file for the given service does not exist
     """
 
     root_path = Path(__file__).resolve().parents[2]

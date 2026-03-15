@@ -1,6 +1,5 @@
 from typing import Any
 import pandas as pd
-import numpy as np
 
 
 def _verify_columns(
@@ -13,7 +12,7 @@ def _verify_columns(
         expected_columns: All the required columns loaded from the config file.
 
     Raises:
-        ValueError: When at least one of the required columns is missing.
+        ValueError: When at least one of the required columns is missing, or when the list is empty
     """
 
     if not log_dicts:
@@ -83,7 +82,7 @@ def count_by_level(logs_dataframe: pd.DataFrame, level: str) -> int:
         level: level of the log
 
     Returns:
-        A numpy.int64 with the amount of occurrences of the given level"""
+        Amount of occurrences of the given level"""
 
     return (logs_dataframe["level"] == level).sum()
 
@@ -109,7 +108,7 @@ def count_by_service(logs_dataframe: pd.DataFrame, service: str) -> int:
         service: Name of the service
 
     Returns:
-        A numpy int64 object with the occurences if the given service in the DF
+        Occurences if the given service in the DF
     """
 
     return (logs_dataframe["service"] == service).sum()

@@ -7,7 +7,11 @@ def load_config() -> dict[str, Any]:
     """Loads all the config in the config.yaml
 
     Returns:
-        All the config loaded in a dict"""
+        All the config loaded in a dict
+
+    Raises:
+        ValueError: When the columns do not exist in the config file
+    """
     parent_path = Path(__file__).resolve().parents[1]
     config_file = parent_path / "config" / "config.yaml"
 
