@@ -108,4 +108,4 @@ A task is complete when:
 - Structure is clean
 - Documentation updated
 - Commit pushed
-    - Behavior is reproducible
+- Behavior is reproducible
