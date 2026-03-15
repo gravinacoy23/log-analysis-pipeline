@@ -380,7 +380,9 @@ project, this signals maturity.
    possible (e.g. `dict[str, int]` instead of just `dict`).
 3. Apply to all existing functions and to all new code going forward.
 
-**Status:** [ ]
+**Status:** [Completed]
+
+Added typehints and docstrings for all the functions.
 
 ---
 

@@ -1,10 +1,20 @@
 import argparse
 import logging
+import pandas as pd
 from pipelines.run_pipeline import run_pipeline
 from pipelines.run_reporting_pipeline import report_level_pipeline
 
 
-def main(service_name):
+def main(service_name: str) -> pd.DataFrame:
+    """Orchestrates all the configuration needed for the data pipelines.
+
+    Args:
+        service_name: name of the service to run the pipeline on
+
+    Returns:
+        Parsed logs dataframe
+    """
+
     logs_dataframe = run_pipeline(service_name)
     report_level_pipeline(logs_dataframe)
 

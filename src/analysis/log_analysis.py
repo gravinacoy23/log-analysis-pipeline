@@ -1,13 +1,25 @@
+from typing import Any
 import pandas as pd
+import numpy as np
 
 
-def _verify_columns(log_dicts, expected_columns):
+def _verify_columns(
+    log_dicts: list[dict[str, Any]], expected_columns: list[str]
+) -> None:
+    """Verifies that the parsed logs are not empty and contain the required columns.
+
+    Args:
+        log_dicts: Parsed logs.
+        expected_columns: All the required columns loaded from the config file.
+
+    Raises:
+        ValueError: When at least one of the required columns is missing.
+    """
 
     if not log_dicts:
         raise ValueError("The parsed logs list is empty")
 
     current_columns = log_dicts[0].keys()
-
     for column_name in expected_columns:
         if column_name not in current_columns:
             raise ValueError(
@@ -15,42 +27,130 @@ def _verify_columns(log_dicts, expected_columns):
             )
 
 
-def convert_to_dataframe(log_dicts, expected_columns):
+def convert_to_dataframe(
+    log_dicts: list[dict[str, Any]], expected_columns: list[str]
+) -> pd.DataFrame:
+    """Converts the list of parsed logs into a dataframe.
+
+    Args:
+        log_dicts: Parsed logs.
+        expected_columns: All the required columns loaded from the config file.
+
+    Returns:
+        Logs in a pd.dataframe object."""
+
     _verify_columns(log_dicts, expected_columns)
     logs_dataframe = pd.DataFrame(log_dicts)
 
     return logs_dataframe
 
 
-def filter_loglevel(logs_dataframe, level):
+def filter_loglevel(logs_dataframe: pd.DataFrame, level: str) -> pd.DataFrame:
+    """Filters all the logs that match the input level.
+
+    Args:
+        logs_dataframe: DF of parsed logs.
+        level: level of the log.
+
+    Returns:
+        A new DF with the selected log level
+    """
+
     return logs_dataframe.loc[logs_dataframe["level"] == level]
 
 
-def select_col(logs_dataframe, column_name):
+def select_col(
+    logs_dataframe: pd.DataFrame, column_name: str
+) -> pd.DataFrame | pd.Series:
+    """Selects the required column by name.
+
+    Args:
+        logs_dataframe: DF of parsed logs.
+        column_name: Name of the column to select
+
+    Returns:
+        The intention is for this function to return a series, will return a DF in case there are two cols with the same name
+    """
+
     return logs_dataframe[column_name]
 
 
-def count_by_level(logs_dataframe, level):
+def count_by_level(logs_dataframe: pd.DataFrame, level: str) -> int:
+    """Counts the the occurrences of a given log level in the dataframe
+
+    Args:
+        logs_dataframe: DF of parsed logs
+        level: level of the log
+
+    Returns:
+        A numpy.int64 with the amount of occurrences of the given level"""
+
     return (logs_dataframe["level"] == level).sum()
 
 
-def count_by_level_all(logs_dataframe):
+def count_by_level_all(logs_dataframe: pd.DataFrame) -> pd.Series:
+    """Counts the occurrences per level in all the DataFrame
+
+    Args:
+        logs_dataframe: DF of parsed logs
+
+    Returns:
+        A series with the occurences per level.
+    """
+
     return logs_dataframe.value_counts("level")
 
 
-def count_by_service(logs_dataframe, service):
+def count_by_service(logs_dataframe: pd.DataFrame, service: str) -> int:
+    """Counts the occurrences of a given service
+
+    Args:
+        logs_dataframe: DF of parsed logs
+        service: Name of the service
+
+    Returns:
+        A numpy int64 object with the occurences if the given service in the DF
+    """
+
     return (logs_dataframe["service"] == service).sum()
 
 
-def count_by_service_all(logs_dataframe):
+def count_by_service_all(logs_dataframe: pd.DataFrame) -> pd.Series:
+    """Counts the number of occurrences of all the services in the DF
+
+    Args:
+        logs_dataframe: DF of parsed logs.
+
+    Returns:
+        Series with the number of occurences
+    """
+
     return logs_dataframe.value_counts("service")
 
 
-def mean_rt_by_service(logs_dataframe):
+def mean_rt_by_service(logs_dataframe: pd.DataFrame) -> pd.Series:
+    """Calculates the mean response time by service.
+
+    Args:
+        logs_dataframe: DF of parsed logs.
+
+    Returns:
+        Series with the mean response time per service
+    """
+
     return logs_dataframe.groupby("service")["response_time"].mean()
 
 
-def mean_cpu_by_level(logs_dataframe):
+def mean_cpu_by_level(logs_dataframe: pd.DataFrame) -> pd.Series:
+    """Calculates the mean CPU usage by level.
+
+    Args:
+        logs_dataframe: DF of parsed logs.
+
+    Returns:
+        Series with the mean CPU usage per level.
+    """
+
     return logs_dataframe.groupby("level")["cpu"].mean()
 
 

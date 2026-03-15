@@ -1,7 +1,17 @@
 from pathlib import Path
+from collections.abc import Iterator
 
 
-def load_service_logs(service):
+def load_service_logs(service: str) -> Iterator[str]:
+    """Loads the service logs in a raw format for the parser.
+
+    Args:
+        service: Name of the service you want to read/load the logs from.
+
+    Returns:
+        Returns a generator containing all the log lines.
+    """
+
     root_path = Path(__file__).resolve().parents[2]
     log_path = root_path / "data" / "raw" / service
 

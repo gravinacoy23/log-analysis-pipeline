@@ -1,8 +1,13 @@
 from pathlib import Path
+from typing import Any
 import yaml
 
 
-def load_config():
+def load_config() -> dict[str, Any]:
+    """Loads all the config in the config.yaml
+
+    Returns:
+        All the config loaded in a dict"""
     parent_path = Path(__file__).resolve().parents[1]
     config_file = parent_path / "config" / "config.yaml"
 
