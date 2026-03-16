@@ -28,10 +28,13 @@ def load_service_logs(service: str) -> Iterator[str]:
     if not log_files:
         raise FileNotFoundError(f"There are no logs for {service}")
 
-    with log_files[0].open("r") as file:
-        for line in file:
-            yield line
+    for log_file in log_files:
+        with log_file.open("r") as file:
+            for line in file:
+                yield line
 
 
 if __name__ == "__main__":
     log = load_service_logs("booking")
+
+    print(log)
