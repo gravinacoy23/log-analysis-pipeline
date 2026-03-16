@@ -1,0 +1,16 @@
+#python temp 
+.pytest_cache/*
+__pycache__/*
+
+#Not needed dirs
+data/*
+output/*
+docs/*
+
+#git
+.git/*
+.gitignore
+
+#testing
+tests/*
+
