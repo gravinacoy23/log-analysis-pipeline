@@ -137,7 +137,7 @@ def mean_rt_by_service(logs_dataframe: pd.DataFrame) -> pd.Series:
         Series with the mean response time per service
     """
 
-    return logs_dataframe.groupby("service")["response_time"].mean()
+    return logs_dataframe.groupby("service")["response_time"].mean()  # type: ignore[return-value]
 
 
 def mean_cpu_by_level(logs_dataframe: pd.DataFrame) -> pd.Series:
@@ -150,7 +150,7 @@ def mean_cpu_by_level(logs_dataframe: pd.DataFrame) -> pd.Series:
         Series with the mean CPU usage per level.
     """
 
-    return logs_dataframe.groupby("level")["cpu"].mean()
+    return logs_dataframe.groupby("level")["cpu"].mean()  # type: ignore[return-value]
 
 
 if __name__ == "__main__":
