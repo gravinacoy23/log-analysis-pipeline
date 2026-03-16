@@ -1,3 +1,4 @@
 pyyaml
-pathlib
 pytest
+pandas
+matplotlib
