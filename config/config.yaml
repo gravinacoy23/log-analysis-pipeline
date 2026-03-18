@@ -50,3 +50,13 @@ columns:
   - response_time
   - level
   - msg
+
+metric_thresholds:
+  cpu:
+    low: 44
+    normal: 57
+    high: 70
+  mem:
+    low: 52
+    normal: 63
+    high: 75
