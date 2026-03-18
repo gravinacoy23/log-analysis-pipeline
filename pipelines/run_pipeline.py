@@ -12,7 +12,8 @@ def run_pipeline(service: str) -> pd.DataFrame:
         service: name of the service to process.
 
     Returns:
-        Dataframe of all the logs for the service."""
+        Dataframe of all the logs for the service.
+    """
 
     raw_data = load_config()
     raw_logs = load_service_logs(service)
