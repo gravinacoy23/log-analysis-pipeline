@@ -153,6 +153,36 @@ def mean_cpu_by_level(logs_dataframe: pd.DataFrame) -> pd.Series:
     return logs_dataframe.groupby("level")["cpu"].mean()  # type: ignore[return-value]
 
 
+def get_metric_thresholds(
+    logs_dataframe: pd.DataFrame,
+    metric: str,
+    thresholds: dict[str, dict[str, list[int]]],
+) -> None:
+    """Adds a column that based on predefined thresholds assigns a value of the status of the given metric.
+
+    Args:
+        logs_dataframe: DF of parsed logs.
+        metric: name of the metric
+        Thresholds: To clasify the logs per metric
+    """
+
+    metric_thresholds = dict(thresholds[metric])
+
+    edges = [logs_dataframe[metric].min()]
+    labels = list()
+
+    for label, edge in metric_thresholds.items():
+        edges.append(edge)
+        labels.append(label)
+
+    logs_dataframe[f"{metric}_bucket"] = pd.cut(
+        select_col(logs_dataframe, metric),
+        bins=edges,
+        labels=labels,
+        include_lowest=True,
+    )
+
+
 if __name__ == "__main__":
     log_dicts = [
         {

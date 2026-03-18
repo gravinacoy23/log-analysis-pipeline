@@ -1,11 +1,12 @@
-# Log Analysis Module — Design (v2)
+# Log Analysis Module — Design (v3)
 
 ## Objective
 
 Provide the analytical layer of the pipeline.
 Receives structured log data and converts it into a pandas DataFrame
 ready for analysis and visualization. Validates that required columns
-are present before creating the DataFrame.
+are present before creating the DataFrame. Supports computed columns
+derived from config-driven thresholds.
 
 ---
 
@@ -105,7 +106,8 @@ are present before creating the DataFrame.
 
 ### Returns
 
-- `pd.Series` containing the values of the selected column
+- `pd.DataFrame | pd.Series` — returns a Series when the column name
+  is unique, returns a DataFrame if duplicate column names exist
 
 ### Implementation Details
 
@@ -113,10 +115,10 @@ are present before creating the DataFrame.
 
 ### Design Decisions
 
-- Returns a Series, not a DataFrame — a single column in pandas is
-  always a Series, which is the 1D building block of a DataFrame
-- Named `select_col()` instead of `filter_col()` because the operation
-  selects structure, not filters rows by condition
+- Return type is `pd.DataFrame | pd.Series` because pandas returns
+  a DataFrame when multiple columns share the same name. In this
+  pipeline, columns are validated by `_verify_columns()` so duplicates
+  are not expected, but the type hint reflects what pandas actually does.
 
 ---
 
@@ -222,15 +224,88 @@ are present before creating the DataFrame.
 
 ---
 
-## Changes from v1
+## Function: get_metric_thresholds()
 
-- Added `_verify_columns()` — validates required columns before
-  DataFrame creation
-- `convert_to_dataframe()` now receives `expected_columns` as a
-  second parameter, passed by the pipeline orchestrator
-- Validation covers two cases: empty input list and missing columns
-- Column names are config-driven — loaded from `config.yaml` by
-  the pipeline, not hardcoded in the analysis layer
+### Parameters
+- `logs_dataframe` — pandas DataFrame with parsed log data
+- `metric` — string with the name of the numeric column to classify
+  (e.g. `"cpu"`, `"mem"`)
+- `thresholds` — dictionary loaded from `config.yaml` containing
+  the threshold values per metric
+
+### Returns
+- None — mutates the DataFrame by adding a new column
+  `<metric>_bucket` with values `"low"`, `"normal"`, or `"high"`
+
+### Implementation Details
+
+- Reads threshold boundaries from the config dictionary for the
+  given metric
+- Uses the DataFrame column's `.min()` as the lower edge to ensure
+  all values are covered regardless of the metric's range
+- Uses `pd.cut()` with `include_lowest=True` to classify each row
+  into a bucket based on the threshold boundaries
+- The new column is named `f"{metric}_bucket"` (e.g. `cpu_bucket`,
+  `mem_bucket`)
+
+### Config Structure
+
+```yaml
+metric_thresholds:
+  cpu:
+    low: 44
+    normal: 57
+    high: 70
+  mem:
+    low: 52
+    normal: 63
+    high: 75
+```
+
+Each value represents the upper boundary of that bucket. The lower
+boundary of the first bucket is derived from the data itself using
+`.min()`.
+
+### Design Decisions
+
+- **Single generic function instead of one per metric.** The logic
+  is identical for CPU and memory — only the thresholds differ. The
+  thresholds come from config, not from the function. This avoids
+  duplicating nearly identical functions and scales to any new numeric
+  metric without code changes.
+
+- **Config-driven thresholds.** Threshold values are externalized to
+  `config.yaml` rather than hardcoded. This makes the classification
+  adjustable without modifying code — important for when the generator
+  evolves or the dataset characteristics change.
+
+- **Mutates the DataFrame directly.** The function adds a column to
+  the existing DataFrame instead of returning a new one. This is
+  acceptable because the pipeline processes data in a linear chain —
+  no other function depends on the DataFrame being in its pre-mutation
+  state.
+
+- **`pd.cut()` over manual `.loc[]` assignments.** An earlier
+  implementation used three `.loc[]` calls with manual conditions.
+  `pd.cut()` expresses the same logic in a single call, is less
+  error-prone with boundary conditions, and is the idiomatic pandas
+  approach for binning continuous data.
+
+- **`.min()` as lower edge instead of hardcoded zero.** Using the
+  actual minimum value from the data ensures the bins cover all
+  values regardless of the metric's range. Hardcoding `0` would
+  create an unnecessarily wide first bin and could misclassify values
+  if a metric's range does not start at zero.
+
+---
+
+## Changes from v2
+
+- Added `get_metric_thresholds()` — classifies numeric columns into
+  `low`, `normal`, `high` buckets using config-driven thresholds
+- `config.yaml` extended with `metric_thresholds` section
+- `select_col()` return type documented as `pd.DataFrame | pd.Series`
+  to reflect actual pandas behavior with duplicate column names
 
 ---
 
