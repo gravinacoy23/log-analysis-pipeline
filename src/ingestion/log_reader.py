@@ -34,7 +34,58 @@ def load_service_logs(service: str) -> Iterator[str]:
                 yield line
 
 
-if __name__ == "__main__":
-    log = load_service_logs("booking")
+def load_all_logs(services: list[str]) -> Iterator[str]:
+    """Loads the all the logs in the services dirs.
 
-    print(log)
+    Args:
+        services: Names of all the services.
+
+    Returns:
+        Returns a generator containing all the log lines.
+    """
+    log_paths = _load_all_path_names(services)
+    log_files = _load_all_files(log_paths)
+    for log_file in log_files:
+        with log_file.open("r") as file:
+            for line in file:
+                yield line
+
+
+def _load_all_path_names(services: list[str]) -> list[Path]:
+    """Loads all the service paths.
+
+    Args:
+        services: Names of all the services
+
+    Returns:
+        All the paths for the files
+    """
+
+    root_path = Path(__file__).resolve().parents[2]
+    paths = list()
+
+    for service in services:
+        paths.append(root_path / "data" / "raw" / service)
+
+    return paths
+
+
+def _load_all_files(paths: list[Path]) -> list[Path]:
+    """Loads all file names.
+
+    Args:
+        paths: all the path names.
+
+    Returns:
+        All file names.
+    """
+
+    log_files = list()
+    for path in paths:
+        for file in path.iterdir():
+            if file.is_file():
+                log_files.append(file)
+
+    log_files.sort()
+
+    return log_files
