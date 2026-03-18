@@ -1,32 +1,71 @@
+# =========================
 # Python
+# =========================
 __pycache__/
 *.pyc
-.env
-venv/
-output/*
-data/raw/*
+*.pyo
+*.pyd
 
+# =========================
 # Virtual environments
+# =========================
 venv/
 .env/
 *.env
 
+# =========================
+# Data & Output
+# =========================
+output/
+data/raw/
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Ruff
+# =========================
+.ruff_cache/
+
+# =========================
+# Node
+# =========================
+node_modules/
+
+# =========================
+# Testing / coverage
+# =========================
+.coverage
+htmlcov/
+
+# =========================
+# Build
+# =========================
+dist/
+build/
+*.egg-info/
+
+# =========================
+# Jupyter
+# =========================
+.ipynb_checkpoints/
+
+# =========================
 # OS
+# =========================
 .DS_Store
 Thumbs.db
 
-# Logs temporales
-*.log
-
-# Output data
-output/
-
-#Ignore vim temp files
+# =========================
+# Vim / Neovim
+# =========================
 *.swp
 *.swo
 
-#ignore personal toughts on the project
+# =========================
+# Project-specific
+# =========================
 reflexiones/
-
-#secret keys
 config/secrets.yaml
