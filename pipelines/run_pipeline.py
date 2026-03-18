@@ -1,7 +1,7 @@
 from src.config_loader import load_config
 from src.ingestion.log_reader import load_service_logs
 from src.processing.log_parser import parse_logs
-from src.analysis.log_analysis import convert_to_dataframe
+from src.analysis.log_analysis import convert_to_dataframe, get_metric_thresholds
 import pandas as pd
 
 
@@ -19,6 +19,8 @@ def run_pipeline(service: str) -> pd.DataFrame:
     parsed_logs = parse_logs(raw_logs)
     logs_dataframe = convert_to_dataframe(parsed_logs, raw_data["columns"])
 
+    get_metric_thresholds(logs_dataframe, "cpu", raw_data["metric_thresholds"])
+    get_metric_thresholds(logs_dataframe, "mem", raw_data["metric_thresholds"])
     return logs_dataframe
 
 
