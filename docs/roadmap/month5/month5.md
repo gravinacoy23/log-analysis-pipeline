@@ -4,6 +4,7 @@
 
 Move the local pipeline to the cloud. Learn the fundamental AWS services
 required to store, process, and manage data in a production environment.
+Introduce databases as a persistence layer for processed data.
 
 ---
 
@@ -40,6 +41,21 @@ required to store, process, and manage data in a production environment.
 - `aws ec2` basics
 - Profiles for multiple environments
 
+## Databases — Introduction
+
+- SQL fundamentals: CREATE, INSERT, SELECT, WHERE, GROUP BY, JOIN
+- When to use a database vs flat files (CSV) vs object storage (S3)
+- Relational databases: tables, schemas, primary keys, foreign keys
+- AWS RDS basics — managed relational database service
+- DynamoDB basics — when NoSQL makes sense vs relational
+- Connecting to a database from Python using a database driver
+- Persisting the feature dataset to a database instead of only CSV
+- Querying processed data with SQL
+
+The goal is not to become a DBA — it is to understand how data lives
+in production systems and how to read from and write to databases
+from a pipeline. This is a core skill for Data and ML Engineering.
+
 ---
 
 # Pipeline Evolution
@@ -54,6 +70,7 @@ log_generator.py → data/raw/ → pipeline → output/datasets/
 ### Cloud Mode
 ```
 log_generator.py → S3 bucket (raw/) → pipeline on EC2 → S3 bucket (processed/)
+                                                       → RDS (feature dataset)
 ```
 
 The code does not change between modes — only the paths and
@@ -75,7 +92,22 @@ log-analysis-pipeline/
 │
 ├── docs/
 │   └── aws_setup.md              ← new this month
+│   └── database_design.md        ← new this month
 ```
+
+---
+
+# Data Persistence Strategy
+
+By end of Month 5 the pipeline should support multiple persistence
+targets:
+
+- **S3** — raw logs and processed datasets (bulk storage)
+- **RDS** — feature dataset for structured queries (SQL access)
+- **CSV** — local development and quick inspection (already exists)
+
+The decision of where to persist is configuration-driven. The pipeline
+does not hardcode the persistence target.
 
 ---
 
@@ -83,8 +115,9 @@ log-analysis-pipeline/
 
 - Never commit AWS credentials to Git
 - `.gitignore` must include `.env` and `~/.aws/credentials`
-- Use IAM roles for EC2 access to S3 — no access keys on the instance
+- Use IAM roles for EC2 access to S3 and RDS — no access keys on the instance
 - Use the principle of least privilege for all IAM policies
+- Database credentials managed via environment variables or AWS Secrets Manager
 
 ---
 
@@ -96,7 +129,10 @@ By the end of Month 5 you must have:
 - Pipeline running on EC2
 - IAM role configured correctly
 - No credentials in the codebase
+- Feature dataset persisted to a database
+- Basic SQL queries against the stored data
 - AWS setup documented in `docs/aws_setup.md`
+- Database design documented in `docs/database_design.md`
 - Frequent commits
 
 ---
@@ -106,7 +142,7 @@ By the end of Month 5 you must have:
 A task is complete when:
 
 - Pipeline runs on EC2
-- Data persists in S3
+- Data persists in S3 and database
 - IAM is configured securely
 - Documentation updated
 - Commit pushed
