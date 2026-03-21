@@ -1,5 +1,4 @@
-from src.analysis.log_visualizer import plot_metric
-from src.analysis.log_analysis import count_by_level_all
+from src.analysis.log_visualizer import plot_count_metric
 from pathlib import Path
 import pandas as pd
 
@@ -27,8 +26,7 @@ def report_level_pipeline(logs_dataframe: pd.DataFrame) -> None:
 
     plot_dir = _make_output_directory()
     plot_file = plot_dir / "level_plot.png"
-    metric_dict = count_by_level_all(logs_dataframe).to_dict()
 
-    figure = plot_metric(metric_dict, "level")
+    count_plot = plot_count_metric(logs_dataframe, "level")
 
-    figure.savefig(plot_file)
+    count_plot.savefig(plot_file)

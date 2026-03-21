@@ -1,36 +1,72 @@
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
+import seaborn as sns
+import pandas as pd
 
 
-def plot_metric(metric_dict: dict[str, int], metric_name: str) -> Figure:
-    """Makes a plot bar diagram of the given metric
+def plot_count_metric(logs_dataframe: pd.DataFrame, metric: str) -> Figure:
+    """Plots the count per metric.
 
     Args:
-        metric_dict: Maps the name of the metric with the number of occurences in the dataset
-        metric_name: Metric to plot
+        logs_dataframe: DF of logs
+        metric: Name of the metric to plot
 
     Returns:
-        Figure object so the pipeline can use it as needed"""
-
+        Figure with the plot count per metric
+    """
     figure, ax = plt.subplots()
 
-    ax.bar(range(len(metric_dict)), list(metric_dict.values()))
-    ax.set_xticks(range(len(metric_dict)))
-    ax.set_xticklabels(list(metric_dict.keys()))
-    ax.set_title(f"Plot bar for {metric_name.capitalize()} metric")
-    ax.set_xlabel(metric_name)
+    sns.countplot(logs_dataframe, x=metric, ax=ax)
+    ax.set_title(f"plot count for {metric.capitalize()} metric")
+    ax.set_xlabel(metric.capitalize())
     ax.set_ylabel("Occurences")
+
+    return figure
+
+
+def plot_correlation(corr_matrix: pd.DataFrame) -> Figure:
+    """Plots the correlation of a given corr matrix.
+
+    Args:
+        corr_matrix: Matrix with the correlation values between all the numeric cols.
+
+    Returns:
+        Figure with the heatmap seaborn for correlation.
+    """
+    figure, ax = plt.subplots()
+
+    sns.heatmap(corr_matrix, ax=ax)
+    ax.set_title("Plot correlation of numeric cols")
+
+    return figure
+
+
+def plot_distribution(logs_dataframe: pd.DataFrame, column_name: str) -> Figure:
+    """Plots the distribution of numeric data types
+
+    Args:
+        logs_dataframe: DF of parsed logs
+        column_name: Column to plot
+
+    Returns:
+        Figure of the distribution
+    """
+    figure, ax = plt.subplots()
+
+    sns.histplot(logs_dataframe, x=column_name, ax=ax)
+
+    ax.set_title(f"Plot distribution of {column_name}")
 
     return figure
 
 
 if __name__ == "__main__":
     level_dict = {
-        "INFO": 3,
-        "WARNING": 2,
+        "INFO": 10,
+        "WARNING": 1,
         "ERROR": 1,
     }
 
-    level_plot = plot_metric(level_dict, "level")
+    sns.countplot(level_dict)
 
     plt.show()
