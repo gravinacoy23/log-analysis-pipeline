@@ -23,7 +23,3 @@ def run_pipeline(service: str) -> pd.DataFrame:
     get_metric_thresholds(logs_dataframe, "cpu", raw_data["metric_thresholds"])
     get_metric_thresholds(logs_dataframe, "mem", raw_data["metric_thresholds"])
     return logs_dataframe
-
-
-if __name__ == "__main__":
-    print(run_pipeline("booking"))
