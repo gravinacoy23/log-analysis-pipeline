@@ -44,6 +44,20 @@ def convert_to_dataframe(
     return logs_dataframe
 
 
+def convert_corr_matrix(logs_dataframe: pd.DataFrame) -> pd.DataFrame:
+    """Converts the numeric type cols to a correlation matrix
+
+    Args:
+        logs_dataframe: DF of parsed logs.
+
+    Returns:
+        DF of the correlation matrix
+    """
+    numeric_cols = logs_dataframe.select_dtypes(include="number")
+
+    return numeric_cols.corr("pearson")
+
+
 def filter_loglevel(logs_dataframe: pd.DataFrame, level: str) -> pd.DataFrame:
     """Filters all the logs that match the input level.
 
