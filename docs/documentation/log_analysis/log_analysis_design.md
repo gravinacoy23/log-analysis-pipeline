@@ -1,4 +1,4 @@
-# Log Analysis Module — Design (v3)
+# Log Analysis Module — Design (v4)
 
 ## Objective
 
@@ -6,7 +6,8 @@ Provide the analytical layer of the pipeline.
 Receives structured log data and converts it into a pandas DataFrame
 ready for analysis and visualization. Validates that required columns
 are present before creating the DataFrame. Supports computed columns
-derived from config-driven thresholds.
+derived from config-driven thresholds and correlation analysis for
+numeric metrics.
 
 ---
 
@@ -299,13 +300,51 @@ boundary of the first bucket is derived from the data itself using
 
 ---
 
-## Changes from v2
+## Function: convert_corr_matrix()
 
-- Added `get_metric_thresholds()` — classifies numeric columns into
-  `low`, `normal`, `high` buckets using config-driven thresholds
-- `config.yaml` extended with `metric_thresholds` section
-- `select_col()` return type documented as `pd.DataFrame | pd.Series`
-  to reflect actual pandas behavior with duplicate column names
+### Parameters
+- `logs_dataframe` — pandas DataFrame with parsed log data
+
+### Returns
+- `pd.DataFrame` — correlation matrix of all numeric columns
+
+### Implementation Details
+
+- Uses `select_dtypes(include="number")` to extract only numeric
+  columns from the DataFrame
+- Applies `.corr("pearson")` to compute the Pearson correlation
+  matrix across all numeric columns
+- Returns the resulting matrix as a DataFrame — rows and columns
+  are the numeric column names, values are correlation coefficients
+  ranging from -1 to 1
+
+### Design Decisions
+
+- **Lives in the analysis layer, not the visualizer.** Computing
+  correlations is an analytical operation — it answers a question
+  about the data. The visualizer only receives the result and draws
+  it. This follows the same separation used throughout the pipeline:
+  analysis calculates, visualizer draws, pipeline connects.
+
+- **`select_dtypes` is called internally, not exposed as a separate
+  function.** Selecting numeric columns is a utility step with no
+  domain meaning — it is not an analytical question about the data.
+  Functions like `count_by_level_all()` have business meaning;
+  "select columns by type" does not. Keeping it internal avoids
+  cluttering the public interface with generic pandas wrappers.
+
+- **Pearson correlation.** The default and most common correlation
+  method. Measures linear relationships between variables. Suitable
+  for the current dataset where the CPU → response_time correlation
+  was designed to be linear in the generator.
+
+---
+
+## Changes from v3
+
+- Added `convert_corr_matrix()` — computes Pearson correlation matrix
+  for all numeric columns using `select_dtypes` and `.corr()`
+- Objective updated to reflect correlation analysis capability
 
 ---
 
