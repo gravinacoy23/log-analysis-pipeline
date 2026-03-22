@@ -1,4 +1,4 @@
-# Main — Implementation (v1)
+# Main — Implementation (v3)
 
 ## Objective
 
@@ -16,10 +16,11 @@ The goal of this file is to:
 
 `main.py` is the entry point of the application. It does not contain
 business logic or pipeline logic — it is responsible for bootstrapping
-the application and delegating to the appropriate pipeline.
+the application and delegating to the appropriate pipelines.
 
 ```
-user → main.py → run_pipeline.py → log_reader.py → log_parser.py
+user → main.py → run_pipeline.py → log_reader.py → log_parser.py → log_analysis.py → DataFrame
+                → run_reporting_pipeline.py → log_visualizer.py → output/plots/
 ```
 
 ---
@@ -36,13 +37,13 @@ main.py  (project root)
 
 ## `main(service_name)`
 
-Calls the pipeline orchestrator and returns the parsed log data.
+Calls the data pipeline and the reporting pipeline in sequence.
 
 **Parameters:**
 - `service_name` (str) — name of the service to analyze
 
 **Returns:**
-- List of dicts — parsed log entries as returned by `run_pipeline`
+- `pd.DataFrame` — parsed log data as returned by `run_pipeline`
 
 ---
 
@@ -80,6 +81,18 @@ python main.py --service pricing
 
 If no argument is provided, the default service is `booking`.
 
+## Pipeline Coordination
+
+`main()` coordinates two pipelines in sequence:
+
+1. `run_pipeline(service_name)` — ingestion, parsing, and DataFrame
+   creation with computed columns
+2. `report_pipeline(logs_dataframe)` — generates all visualizations
+   and saves them to `output/plots/`
+
+The DataFrame produced by the first pipeline is passed directly to
+the second. `main()` does not modify or inspect it.
+
 ---
 
 # Design Decisions
@@ -89,9 +102,9 @@ If no argument is provided, the default service is `booking`.
 guarantees no log event is emitted before the configuration is in place.
 
 ## main() is thin
-`main()` does not contain pipeline logic. It only calls `run_pipeline()`
-and returns the result. Business logic belongs in the pipeline layer,
-not in the entry point.
+`main()` does not contain pipeline logic. It calls `run_pipeline()`
+and `report_pipeline()` in sequence and returns the DataFrame.
+Business logic belongs in the pipeline layer, not in the entry point.
 
 ## argparse over hardcoded values
 The service name is passed as a CLI argument rather than hardcoded.
@@ -99,13 +112,13 @@ This makes the pipeline reusable without modifying source code.
 
 ---
 
-# Changes from v1
- 
-- `main()` no longer returns a DataFrame — it coordinates two pipelines
-- `report_level_pipeline()` added as the second pipeline call
-- `print(main(service_name))` removed — output is now saved to disk
-  by the reporting pipeline
- 
+# Changes from v2
+
+- `report_level_pipeline()` replaced by `report_pipeline()` — the
+  reporting pipeline was generalized to support multiple report types
+  (count by level, count by service, response time distribution,
+  correlation heatmap)
+
 ---
 
 # Future Improvements (Planned)

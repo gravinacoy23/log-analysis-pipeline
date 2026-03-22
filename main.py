@@ -2,7 +2,7 @@ import argparse
 import logging
 import pandas as pd
 from pipelines.run_pipeline import run_pipeline
-from pipelines.run_reporting_pipeline import report_level_pipeline
+from pipelines.run_reporting_pipeline import report_pipeline
 
 
 def main(service_name: str) -> pd.DataFrame:
@@ -16,7 +16,7 @@ def main(service_name: str) -> pd.DataFrame:
     """
 
     logs_dataframe = run_pipeline(service_name)
-    report_level_pipeline(logs_dataframe)
+    report_pipeline(logs_dataframe)
 
     return logs_dataframe
 
