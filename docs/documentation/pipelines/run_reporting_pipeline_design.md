@@ -1,10 +1,11 @@
-# Run Reporting Pipeline — Design (v1)
+# Run Reporting Pipeline — Design (v2)
 
 ## Objective
 
 Orchestrate the reporting workflow for the log analysis pipeline.
-Receives a DataFrame, runs analysis, generates visualizations, and
-persists output to disk.
+Receives a DataFrame, delegates to report-specific functions that
+prepare data and generate visualizations, and persists all output
+to disk.
 
 ---
 
@@ -28,7 +29,7 @@ pipelines/run_reporting_pipeline.py
 
 ---
 
-## Function: make_output_directory()
+## Function: _make_output_directory()
 
 ### Parameters
 
@@ -52,7 +53,7 @@ pipelines/run_reporting_pipeline.py
 
 ---
 
-## Function: report_level_pipeline()
+## Function: report_pipeline()
 
 ### Parameters
 
@@ -64,47 +65,144 @@ pipelines/run_reporting_pipeline.py
 
 ### Implementation Details
 
-- Calls `count_by_level_all()` from `log_analysis.py` to get level counts
-- Converts the resulting `pd.Series` to a `dict` using `.to_dict()`
-- Passes the dict and the metric name to `plot_metric()` from `log_visualizer.py`
-- Saves the returned figure to `output/plots/level_plot.png` using `figure.savefig()`
+- Calls `_make_output_directory()` once to get the output path
+- Collects all report results into a single dict mapping filenames
+  to Figure objects
+- Calls each report function (`_count_report`, `_corr_report`,
+  `_dist_report`) which return `{filename: Figure}` dicts
+- Merges results using `dict.update()`
+- Iterates over the collected dict and saves each figure to disk
+  using `figure.savefig()`
 
 ### Pipeline Flow
 
 ```
-1. count_by_level_all(df)   → pd.Series
-2. .to_dict()               → dict
-3. plot_metric(dict, name)  → matplotlib Figure
-4. figure.savefig(path)     → output/plots/level_plot.png
+1. _make_output_directory()                     → Path
+2. _count_report(df, "level")                   → {filename: Figure}
+3. _count_report(df, "service")                 → {filename: Figure}
+4. _corr_report(df)                             → {filename: Figure}
+5. _dist_report(df, "response_time")            → {filename: Figure}
+6. for each figure → figure.savefig(path)       → output/plots/
 ```
 
 ### Design Decisions
 
-- **Series to dict conversion happens here, not in the analysis layer.**
-  The reporting pipeline is the orchestrator — it adapts the output format
-  of one module to the input format of another. The analysis layer should
-  not need to know that the visualizer expects a dict. The visualizer should
-  not need to know that the data comes from pandas.
+- **Dict as collector pattern.** Each report function returns a
+  `{filename: Figure}` dict. The orchestrator merges them all and
+  saves in a single loop. This separates report generation from
+  file persistence — the report functions do not need to know about
+  paths or directories.
 
-- **Function is specific to level counts, not generic.** The function is
-  named `report_level_pipeline()` and hardcodes the call to
-  `count_by_level_all()` and the metric name `"level"`. This is intentional
-  — generalizing the reporting pipeline before having multiple report types
-  would be designing with incomplete information. When Month 2 introduces
-  additional reports, the pattern will emerge and refactoring can happen
-  with confidence.
+- **Runs all reports every time.** The orchestrator calls all report
+  functions unconditionally. Selective report execution is deferred
+  to future work — the current set of 4 reports is small enough
+  that running all of them is acceptable.
 
-- **Saves output to disk directly.** Unlike `plot_metric()` which returns
-  a figure without deciding what to do with it, the reporting pipeline's
-  job is to produce a deliverable. Saving to disk is part of that
-  responsibility.
+- **One save loop instead of saving in each function.** Persistence
+  is the orchestrator's responsibility. Report functions focus on
+  preparing data and generating figures. This is the same separation
+  of concerns used across the pipeline.
+
+---
+
+## Function: _count_report()
+
+### Parameters
+
+- `logs_dataframe` — pandas DataFrame with parsed log data
+- `metric_name` — string identifying the categorical column to count
+
+### Returns
+
+- `dict[str, Figure]` — single-entry dict mapping the filename to
+  the generated Figure
+
+### Implementation Details
+
+- Generates a dynamic filename using the metric name:
+  `f"{metric_name}_count_plot.png"`
+- Calls `plot_count_metric()` from the visualizer with the DataFrame
+  and metric name
+- Returns the filename-figure pair as a dict
+
+### Design Decisions
+
+- **Dynamic filename from metric name.** The function is called
+  multiple times with different metrics (level, service). A hardcoded
+  filename would cause the second call to overwrite the first.
+
+---
+
+## Function: _corr_report()
+
+### Parameters
+
+- `logs_dataframe` — pandas DataFrame with parsed log data
+
+### Returns
+
+- `dict[str, Figure]` — single-entry dict mapping the filename to
+  the generated Figure
+
+### Implementation Details
+
+- Calls `convert_corr_matrix()` from the analysis layer to compute
+  the Pearson correlation matrix
+- Passes the matrix to `plot_correlation()` from the visualizer
+- Returns the filename-figure pair as a dict
+
+### Design Decisions
+
+- **Correlation computation happens in the analysis layer.** The
+  report function orchestrates the call to `convert_corr_matrix()`
+  and passes the result to the visualizer. This maintains the
+  separation: analysis computes, visualizer draws, pipeline connects.
+
+---
+
+## Function: _dist_report()
+
+### Parameters
+
+- `logs_dataframe` — pandas DataFrame with parsed log data
+- `metric_name` — string identifying the numeric column to plot
+
+### Returns
+
+- `dict[str, Figure]` — single-entry dict mapping the filename to
+  the generated Figure
+
+### Implementation Details
+
+- Calls `plot_distribution()` from the visualizer with the DataFrame
+  and column name
+- Returns the filename-figure pair as a dict
+
+---
+
+## Changes from v1
+
+- Renamed `report_level_pipeline()` to `report_pipeline()` — reflects
+  the generalized scope supporting multiple report types
+- Added `_count_report()` — generates count plots for any categorical
+  column, called for both level and service
+- Added `_corr_report()` — generates correlation heatmap, delegates
+  matrix computation to the analysis layer
+- Added `_dist_report()` — generates distribution histogram for any
+  numeric column
+- Dict collector pattern replaces single hardcoded report — all
+  figures collected and saved in a single loop
+- Removed `count_by_level_all()` call and `.to_dict()` conversion —
+  seaborn-based visualizer receives DataFrames directly
+- "Generalize to support additional report types" removed from Future
+  Improvements — resolved
 
 ---
 
 # Future Improvements (Planned)
 
-- Generalize to support additional report types (by service, response
-  time distribution, etc.) when Month 2 introduces more analysis work
+- Selective report execution — allow the caller to specify which
+  reports to generate instead of running all unconditionally
 - Accept output path as a parameter for flexibility
-- Add a summary or metadata file alongside the plot (report date,
+- Add a summary or metadata file alongside the plots (report date,
   service analyzed, record count)

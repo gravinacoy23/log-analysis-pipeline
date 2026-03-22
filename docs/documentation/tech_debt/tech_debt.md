@@ -299,24 +299,48 @@ a summary report would make the pipeline more useful as a standalone tool.
 ---
 
 ## Run Reporting Pipeline
- 
+
 ---
- 
+
 ### 🟡 Generalize reporting pipeline to support multiple report types
- 
+
 **Current behavior**
 `report_level_pipeline()` is hardcoded to produce a single report:
 log count by level. Each new report type would require a new dedicated
 function.
- 
+
 **Why it matters**
 Month 2 introduces additional analyses — log count by service, response
 time distribution, CPU analysis. The reporting pipeline will need to
 support multiple report types without duplicating the orchestration
 logic.
- 
+
 **Target:** Month 2 — when the second and third report types are needed,
 the pattern for generalization will be clear.
+
+**Status** [Completed]
+
+Renamed to `report_pipeline()`. Uses a dict collector pattern — each
+report function returns `{filename: Figure}`, the orchestrator merges
+and saves in a single loop. Supports 4 report types: count by level,
+count by service, response time distribution, and correlation heatmap.
+
+---
+
+### 🟡 Selective report execution in reporting pipeline
+
+**Current behavior**
+`report_pipeline()` runs all 4 reports unconditionally on every
+execution. There is no way to generate only specific reports.
+
+**Why it matters**
+As the number of reports grows, running all of them every time
+becomes wasteful. Allowing the caller to specify which reports to
+run would make the pipeline more flexible and faster for targeted
+analysis.
+
+**Target:** Month 2–3 — when the report count grows enough that
+selective execution provides clear value.
 
 ---
 
