@@ -196,6 +196,14 @@ and prevent incomplete data from reaching the analysis layer.
 
 **Target:** Month 2 — aligns with data cleaning and handling malformed data in depth.
 
+**Status** [Completed]
+
+Added `_verify_columns()` to the parser — validates each parsed dict
+against expected columns from config before accepting it. Also added
+empty value guard clause in `_parse_fields()` — rejects fields like
+`cpu=` where the value is an empty string. `parse_logs()` now receives
+`expected_cols` from the pipeline orchestrator.
+
 ---
 
 ### 🟡 Return parsing statistics alongside the parsed result

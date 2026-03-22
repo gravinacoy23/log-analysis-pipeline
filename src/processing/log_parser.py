@@ -6,11 +6,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def parse_logs(logs: Iterator[str]) -> list[dict[str, Any]]:
+def parse_logs(logs: Iterator[str], expected_cols: list[str]) -> list[dict[str, Any]]:
     """Parses the raw logs received from the reader in an understandable format for pandas.
 
     Args:
         logs: Iterator containing the strings of all log lines.
+        expected_cols: from the config file, all the expected_cols.
 
     Returns:
         All the logs in an easy format to be processed by Pandas in the analysis layer.
@@ -21,10 +22,20 @@ def parse_logs(logs: Iterator[str]) -> list[dict[str, Any]]:
     for line_number, log in enumerate(logs, start=1):
         before_message, _, message = log.partition(" msg=")
         metrics = before_message.split(" ")
+        parsed_message = message.strip('"\n')
+
+        if not parsed_message:
+            logger.warning(f"Missing message at line {line_number}")
+            continue
+
         log_dict = _parse_fields(metrics, line_number)
 
         if log_dict is not None:
-            log_dict["msg"] = message.strip('"\n')
+            log_dict["msg"] = parsed_message
+
+            if not _verify_columns(log_dict, expected_cols, line_number):
+                continue
+
             log_dict_list.append(log_dict)
 
     return log_dict_list
@@ -50,6 +61,11 @@ def _parse_fields(
         if len(split_log) < 2:
             logger.warning(f"Malformed line skipped at line {line_number}")
             return None
+        elif not split_log[1]:
+            logger.warning(
+                f"Missing {split_log[0]} at line {line_number}, line skipped"
+            )
+            return None
 
         if split_log[1].isdigit():
             log_dict[split_log[0]] = int(split_log[1])
@@ -61,12 +77,24 @@ def _parse_fields(
     return log_dict
 
 
-if __name__ == "__main__":
-    log = [
-        'timestamp=2026-03-08T15:59:49Z service=booking user=80 cpu=65 mem=47 response_time=561 level=INFO msg"Seat booked"\n',
-        'timestamp=2026-03-08T15:59:49Z service=booking user=100 cpu=60 mem=41 response_time=85 level=WARNING msg="Seat not booked"\n',
-        'timestamp=2026-03-08T15:59:49Z service=booking user=100 cpu=60 mem=41 response_time=85 level=WARNING msg="booking failed"\n',
-        'timestamp=2026-03-08T15:59:49Z service=booking user=100 cpu=60 mem=41 response_time=85 level=WARNING msg="booking confirmed"\n',
-    ]
+def _verify_columns(
+    logs_dict: dict[str, Any], expected_cols: list[str], line_number: int
+) -> bool:
+    """Verifies that a given line in the logs has all the required columns.
 
-    print(parse_logs(log))
+    Args:
+        logs_dict: contains the key value pairs of the log of the current iteration.
+        expected_cols: from the config file, all the expected_cols.
+        line_number: current line in log file
+
+    Returns:
+        Whether or not we were able to verify that all the expected columns are in the given log.
+    """
+    for expected in expected_cols:
+        if expected not in logs_dict.keys():
+            logger.warning(
+                f"Missing column {expected} at line {line_number}, line skipped."
+            )
+            return False
+
+    return True
