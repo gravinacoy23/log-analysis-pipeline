@@ -1,4 +1,4 @@
-# Config Loader — Design (v1)
+# Config Loader — Design (v2)
 
 ## Objective
 
@@ -55,7 +55,7 @@ src/config_loader.py
 - **Validation uses `.get()` instead of direct key access.** If a
   required key is missing from the YAML file, `.get()` returns `None`
   instead of raising a `KeyError`. The `not` check then catches both
-  missing keys and empty values (empty lists, empty strings, `None`)
+  missing keys and empty values (empty dicts, empty strings, `None`)
   in a single condition.
 
 - **Separate from the generator's config loader.** The log generator
@@ -75,15 +75,34 @@ src/config_loader.py
 
 ```yaml
 columns:
-  - timestamp
-  - service
-  - user
-  - cpu
-  - mem
-  - response_time
-  - level
-  - msg
+  timestamp: datetime.datetime
+  service: str
+  user: int
+  cpu: int
+  mem: int
+  response_time: int
+  level: str
+  msg: str
 ```
+
+The `columns` key is a dictionary mapping column names to their
+expected data types. This structure serves two purposes:
+
+- **Column name extraction.** The pipeline orchestrator extracts
+  column names using `.keys()` and passes them as a `list[str]` to
+  the parser for field presence validation.
+- **Type validation.** The full dict is passed to the analysis layer's
+  `convert_to_dataframe()` which validates that numeric columns
+  contain the correct data types before creating the DataFrame.
+
+---
+
+# Changes from v1
+
+- `columns` changed from a list of strings to a dict mapping column
+  names to expected data types — enables type validation in the
+  analysis layer without requiring a separate config key
+- Config structure section updated to reflect the new format
 
 ---
 
@@ -93,3 +112,5 @@ columns:
   (e.g. thresholds in Month 3, cloud config in Month 5)
 - Support environment variable override for config file path —
   useful for Docker and cloud deployments
+- Full type validation for all data types (Month 3) — currently
+  only `int` columns are validated

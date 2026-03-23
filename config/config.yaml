@@ -42,14 +42,14 @@ levels:
   - ERROR
 
 columns:
-  - timestamp
-  - service
-  - user
-  - cpu
-  - mem
-  - response_time
-  - level
-  - msg
+  timestamp: datetime.datetime
+  service: str
+  user: int
+  cpu: int
+  mem: int
+  response_time: int
+  level: str
+  msg: str
 
 metric_thresholds:
   cpu:
