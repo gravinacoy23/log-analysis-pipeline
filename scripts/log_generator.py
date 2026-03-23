@@ -23,11 +23,7 @@ def _load_config() -> dict[str, Any]:
     with config_file.open("r") as f:
         data = yaml.safe_load(f)
 
-        if (
-            not data.get("services")
-            or not data.get("messages")
-            or not data.get("levels")
-        ):
+        if not data.get("service") or not data.get("messages") or not data.get("level"):
             raise ValueError(
                 "One or more of your constant variables in the config file is empty or doesn't exist"
             )
@@ -272,8 +268,8 @@ def _generator_loop(
         file_handles: matches the name of a given service with the file handle
     """
 
-    services = raw_data["services"]
-    levels = raw_data["levels"]
+    services = raw_data["service"]
+    levels = raw_data["level"]
     messages = raw_data["messages"]
 
     for _ in range(iterations):
@@ -301,8 +297,8 @@ def generate_logs(iterations: int) -> None:
     directory = _make_raw_directory()
     run_timestamp = _generate_runtimestamp()
     raw_data = _load_config()
-    _make_service_directories(directory, raw_data["services"])
-    file_handles = _create_files(raw_data["services"], directory, run_timestamp)
+    _make_service_directories(directory, raw_data["service"])
+    file_handles = _create_files(raw_data["service"], directory, run_timestamp)
 
     _generator_loop(iterations, raw_data, file_handles)
 
