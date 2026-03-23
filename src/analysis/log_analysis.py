@@ -1,5 +1,9 @@
 from typing import Any
 import pandas as pd
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 def _verify_columns(
@@ -26,8 +30,46 @@ def _verify_columns(
             )
 
 
+def _verify_col_dtype(
+    log_dicts: list[dict[str, Any]], expected_cols: dict[str, str]
+) -> list[dict[str, Any]]:
+    """Verify all the cols have the correct data type
+
+    Args:
+        log_dicts: List of parser logs
+        expected_cols: Expected cols with Dtypes from the config file
+
+    Returns:
+        List of dicts with all the verified logs, drops the lines that have an incorrect data type.
+    """
+
+    _verify_columns(log_dicts, list(expected_cols.keys()))
+
+    int_type_cols = list()
+    verified_log_dicts = list()
+
+    for col, data_type in expected_cols.items():
+        if data_type == "int":
+            int_type_cols.append(col)
+
+    for line_number, log in enumerate(log_dicts, start=1):
+        line_verified = True
+        for int_col in int_type_cols:
+            if not isinstance(log[int_col], int):
+                logger.warning(
+                    f"The column {int_col} does not contain int data type at line {line_number}"
+                )
+                line_verified = False
+                break
+
+        if line_verified:
+            verified_log_dicts.append(log)
+
+    return verified_log_dicts
+
+
 def convert_to_dataframe(
-    log_dicts: list[dict[str, Any]], expected_columns: list[str]
+    log_dicts: list[dict[str, Any]], expected_columns: dict[str, str]
 ) -> pd.DataFrame:
     """Converts the list of parsed logs into a dataframe.
 
@@ -38,8 +80,8 @@ def convert_to_dataframe(
     Returns:
         Logs in a pd.dataframe object."""
 
-    _verify_columns(log_dicts, expected_columns)
-    logs_dataframe = pd.DataFrame(log_dicts)
+    verified_log_dicts = _verify_col_dtype(log_dicts, expected_columns)
+    logs_dataframe = pd.DataFrame(verified_log_dicts)
 
     return logs_dataframe
 
@@ -261,15 +303,15 @@ if __name__ == "__main__":
         },
     ]
 
-    expected_columns = [
-        "timestamp",
-        "service",
-        "user",
-        "cpu",
-        "mem",
-        "response_time",
-        "level",
-        "msg",
-    ]
+    expected_columns = {
+        "timestamp": "str",
+        "service": "str",
+        "user": "int",
+        "cpu": "int",
+        "mem": "int",
+        "response_time": "int",
+        "level": "int",
+        "msg": "str",
+    }
 
     logs_dataframe = convert_to_dataframe(log_dicts, expected_columns)

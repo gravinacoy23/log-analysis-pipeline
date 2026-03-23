@@ -224,14 +224,21 @@ observability and make the pipeline easier to monitor and debug.
 ### 🔵 Configurable field type mappings from config.yaml
 
 **Current behavior**
-Type conversion uses a generic `try/except` pattern — any field that converts
-to `int` is stored as `int`, everything else as `string`.
+`config.yaml` now maps column names to expected types. The analysis
+layer validates `int` columns before DataFrame creation. Type detection
+in the parser still uses generic `isdigit()` — it does not reference
+the config types.
 
 **Why it matters**
-Defining expected types per field in `config.yaml` would make the parser explicit
-about what each field should be and raise a clear error when expectations are not met.
+Extending validation to all types (`str`, `datetime`) and potentially
+moving type-aware parsing into the parser would make the pipeline
+fully explicit about data types end to end.
 
-**Target:** Month 3 — aligns with the config-driven pipeline work.
+**Target:** Month 3 — the config structure and analysis-layer
+validation are already in place. The remaining work is extending
+to additional types.
+
+**Status** [Partially completed — int validation in analysis layer]
 
 ---
 
