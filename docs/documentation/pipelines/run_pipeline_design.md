@@ -1,4 +1,4 @@
-# Run Pipeline — Implementation (v3)
+# Run Pipeline — Implementation (v4)
 
 ## Objective
 
@@ -23,7 +23,7 @@ that the pipeline needs and passes it to the modules that require it.
 main.py → run_pipeline.py → config_loader.py (config)
                            → log_reader.py (raw logs)
                            → log_parser.py (parsed + validated logs)
-                           → log_analysis.py (validated DataFrame)
+                           → log_analysis.py (type-validated DataFrame)
 ```
 
 ---
@@ -56,19 +56,26 @@ for a given service.
 ## Pipeline Flow
 
 ```
-1. load_config()                                    → config dict
-2. load_service_logs(service)                       → iterator of raw strings
-3. parse_logs(raw_logs, config["columns"])           → list of parsed dicts
-4. convert_to_dataframe(parsed_logs, config["columns"]) → validated DataFrame
-5. get_metric_thresholds(df, "cpu", thresholds)     → mutates DataFrame
-6. get_metric_thresholds(df, "mem", thresholds)     → mutates DataFrame
+1. load_config()                                         → config dict
+2. extract expected_columns from config["columns"].keys() → list[str]
+3. load_service_logs(service)                            → iterator of raw strings
+4. parse_logs(raw_logs, expected_columns)                → list of parsed dicts
+5. convert_to_dataframe(parsed_logs, config["columns"])  → type-validated DataFrame
+6. get_metric_thresholds(df, "cpu", thresholds)          → mutates DataFrame
+7. get_metric_thresholds(df, "mem", thresholds)          → mutates DataFrame
 ```
 
 The config is loaded once at the start and its values are passed to
-the stages that need them. Both `parse_logs()` and
-`convert_to_dataframe()` receive the expected column names from the
-config for validation — the parser validates per line, the analysis
-layer validates the complete list.
+the stages that need them. The `columns` config is a dict mapping
+column names to expected types. The pipeline extracts what each stage
+needs:
+
+- **Parser** receives `list[str]` of column names — extracted via
+  `list(config["columns"].keys())`. The parser validates field
+  presence per line but does not need type information.
+- **Analysis layer** receives the full `dict[str, str]` — it uses
+  the keys for column presence validation and the values for data
+  type validation.
 
 ## Return Value
 
@@ -86,19 +93,18 @@ relevant values to each stage. This avoids modules reading config
 independently and ensures the config file is only accessed once per
 pipeline run.
 
-## Orchestrator adapts between modules
-The pipeline extracts `raw_data["columns"]` and passes it to both
-`parse_logs()` and `convert_to_dataframe()`. Neither the parser nor
-the analysis layer knows about `config.yaml` — they only receive
-the list of expected column names. This keeps both layers decoupled
-from the config system.
+## Orchestrator adapts config format per stage
+The pipeline extracts column names as a `list[str]` for the parser
+and passes the full columns dict to the analysis layer. Each stage
+receives only what it needs in the format it needs — neither module
+knows how the config is structured internally.
 
 ## Config passed to two stages is not redundant
-The parser uses the column list to validate each line individually —
+The parser uses column names to validate each line individually —
 rejecting lines with missing fields before they enter the result list.
-The analysis layer uses the same list to validate the complete result —
-catching the case where all lines are rejected and the list is empty.
-Each stage validates at its own level.
+The analysis layer uses the full dict to validate column presence on
+the complete result and to verify that numeric columns contain the
+correct data types. Each stage validates at its own level.
 
 ## Single responsibility
 `run_pipeline` orchestrates. It does not validate inputs, configure
@@ -111,15 +117,15 @@ or a reporting pipeline — each with its own file and clear responsibility.
 
 ---
 
-# Changes from v2
+# Changes from v3
 
-- `parse_logs()` now receives `raw_data["columns"]` as a second
-  parameter — the parser uses this to validate that each parsed line
-  contains all expected fields before accepting it
-- Pipeline flow updated to reflect both parser and analysis layer
-  receiving the expected columns list
-- `get_metric_thresholds()` calls documented in the pipeline flow —
-  computed columns for cpu and mem added after DataFrame creation
+- `config["columns"]` is now a dict mapping names to types — the
+  pipeline extracts column names via `list(.keys())` for the parser
+  and passes the full dict to the analysis layer
+- `convert_to_dataframe()` now receives the columns dict instead of
+  a list — enables data type validation inside the analysis layer
+- Pipeline flow updated to reflect the extraction step and the
+  different formats passed to each stage
 
 ---
 
