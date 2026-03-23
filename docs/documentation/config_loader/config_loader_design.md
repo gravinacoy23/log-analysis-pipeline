@@ -60,7 +60,7 @@ src/config_loader.py
 
 - **Separate from the generator's config loader.** The log generator
   (`scripts/log_generator.py`) has its own private `_load_config()`
-  that validates generator-specific keys (services, messages, levels).
+  that validates generator-specific keys (service, messages, level).
   The pipeline's config loader validates pipeline-specific keys
   (columns). The two are intentionally independent — the pipeline
   does not depend on the generator and vice versa.

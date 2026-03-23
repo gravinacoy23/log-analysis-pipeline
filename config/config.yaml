@@ -17,7 +17,7 @@ output:
   save_summary: true
   save_errors: true
 
-services:
+service:
   - shopping
   - pricing
   - booking
@@ -36,7 +36,7 @@ messages:
     - "Booking failed"
     - "Seat booked"
 
-levels:
+level:
   - INFO
   - WARNING
   - ERROR
