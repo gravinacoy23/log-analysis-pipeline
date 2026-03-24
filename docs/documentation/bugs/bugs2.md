@@ -40,6 +40,10 @@ explanation. Incorrect test data in a portfolio project is misleading.
 **What to do:**
 Change `"level": "int"` to `"level": "str"` in the `__main__` block.
 
+**Status** [Completed]
+
+Updated the typo in the data type of the `"level"` key.
+
 ---
 
 ## P2 — Clarity and Maintainability

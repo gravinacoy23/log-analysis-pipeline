@@ -366,7 +366,7 @@ if __name__ == "__main__":
         "cpu": "int",
         "mem": "int",
         "response_time": "int",
-        "level": "int",
+        "level": "str",
         "msg": "str",
     }
 
@@ -375,4 +375,4 @@ if __name__ == "__main__":
         "level": ["INFO", "WARNING", "ERROR"],
     }
 
-    logs_dataframe = convert_to_dataframe(log_dicts, expected_columns, expected_values)
+    print(convert_to_dataframe(log_dicts, expected_columns, expected_values))
