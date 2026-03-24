@@ -1,4 +1,4 @@
-# Run Pipeline — Implementation (v4)
+# Run Pipeline — Implementation (v5)
 
 ## Objective
 
@@ -23,7 +23,7 @@ that the pipeline needs and passes it to the modules that require it.
 main.py → run_pipeline.py → config_loader.py (config)
                            → log_reader.py (raw logs)
                            → log_parser.py (parsed + validated logs)
-                           → log_analysis.py (type-validated DataFrame)
+                           → log_analysis.py (fully validated DataFrame)
 ```
 
 ---
@@ -57,25 +57,44 @@ for a given service.
 
 ```
 1. load_config()                                         → config dict
-2. extract expected_columns from config["columns"].keys() → list[str]
-3. load_service_logs(service)                            → iterator of raw strings
-4. parse_logs(raw_logs, expected_columns)                → list of parsed dicts
-5. convert_to_dataframe(parsed_logs, config["columns"])  → type-validated DataFrame
-6. get_metric_thresholds(df, "cpu", thresholds)          → mutates DataFrame
-7. get_metric_thresholds(df, "mem", thresholds)          → mutates DataFrame
+2. extract expected_columns from config["columns"]       → dict[str, str]
+3. extract column names via list(.keys())                → list[str]
+4. build expected_values from config["service"] and
+   config["level"]                                       → dict[str, list[str]]
+5. load_service_logs(service)                            → iterator of raw strings
+6. parse_logs(raw_logs, column_names)                    → list of parsed dicts
+7. convert_to_dataframe(parsed_logs, expected_columns,
+   expected_values)                                      → fully validated DataFrame
+8. get_metric_thresholds(df, "cpu", thresholds)          → mutates DataFrame
+9. get_metric_thresholds(df, "mem", thresholds)          → mutates DataFrame
 ```
 
-The config is loaded once at the start and its values are passed to
-the stages that need them. The `columns` config is a dict mapping
-column names to expected types. The pipeline extracts what each stage
-needs:
+The config is loaded once at the start. The pipeline extracts and
+adapts config values for each stage:
 
-- **Parser** receives `list[str]` of column names — extracted via
-  `list(config["columns"].keys())`. The parser validates field
-  presence per line but does not need type information.
-- **Analysis layer** receives the full `dict[str, str]` — it uses
-  the keys for column presence validation and the values for data
-  type validation.
+- **Parser** receives `list[str]` of column names — for field
+  presence validation per line
+- **Analysis layer** receives two config-derived structures:
+  - `expected_columns` (`dict[str, str]`) — column names mapped to
+    types, used for column presence and dtype validation
+  - `expected_values` (`dict[str, list[str]]`) — categorical column
+    names mapped to valid values, used for content validation
+
+## Expected Values Construction
+
+The pipeline builds `expected_values` from existing config keys:
+
+```python
+expected_values = {
+    "service": raw_data["service"],
+    "level": raw_data["level"],
+}
+```
+
+The keys match the DataFrame column names (`"service"`, `"level"`),
+which allows the analysis layer to validate generically without
+hardcoding column names. The values are the lists of valid options
+already defined in the config for the generator.
 
 ## Return Value
 
@@ -94,17 +113,23 @@ independently and ensures the config file is only accessed once per
 pipeline run.
 
 ## Orchestrator adapts config format per stage
-The pipeline extracts column names as a `list[str]` for the parser
-and passes the full columns dict to the analysis layer. Each stage
-receives only what it needs in the format it needs — neither module
-knows how the config is structured internally.
+The pipeline extracts column names as a `list[str]` for the parser,
+passes the full columns dict for type validation, and builds a
+separate `expected_values` dict for content validation. Each stage
+receives only what it needs in the format it needs — no module knows
+how the config is structured internally.
 
-## Config passed to two stages is not redundant
-The parser uses column names to validate each line individually —
-rejecting lines with missing fields before they enter the result list.
-The analysis layer uses the full dict to validate column presence on
-the complete result and to verify that numeric columns contain the
-correct data types. Each stage validates at its own level.
+## Expected values reuse existing config keys
+The `service` and `level` lists in the config are the same lists the
+generator uses to produce logs. Reusing them for validation ensures
+the pipeline validates against the same values the generator produces,
+keeping the system consistent without duplicating configuration.
+
+## Config key names match DataFrame column names
+The config keys `service` and `level` (renamed from `services` and
+`levels` in v4) match the DataFrame column names exactly. This allows
+the analysis layer to use config keys directly as column references
+without needing a mapping layer.
 
 ## Single responsibility
 `run_pipeline` orchestrates. It does not validate inputs, configure
@@ -117,15 +142,14 @@ or a reporting pipeline — each with its own file and clear responsibility.
 
 ---
 
-# Changes from v3
+# Changes from v4
 
-- `config["columns"]` is now a dict mapping names to types — the
-  pipeline extracts column names via `list(.keys())` for the parser
-  and passes the full dict to the analysis layer
-- `convert_to_dataframe()` now receives the columns dict instead of
-  a list — enables data type validation inside the analysis layer
-- Pipeline flow updated to reflect the extraction step and the
-  different formats passed to each stage
+- `expected_values` dict constructed from `raw_data["service"]` and
+  `raw_data["level"]` — maps categorical column names to valid values
+- `convert_to_dataframe()` now receives three parameters:
+  `parsed_logs`, `expected_columns`, and `expected_values`
+- Pipeline flow updated to reflect the construction and passing of
+  `expected_values` for categorical content validation
 
 ---
 

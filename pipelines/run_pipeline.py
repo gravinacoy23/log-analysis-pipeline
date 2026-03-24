@@ -18,8 +18,15 @@ def run_pipeline(service: str) -> pd.DataFrame:
     raw_data = load_config()
     raw_logs = load_service_logs(service)
     expected_columns = raw_data["columns"]
+    expected_values = {
+        "service": raw_data["service"],
+        "level": raw_data["level"],
+    }
+
     parsed_logs = parse_logs(raw_logs, list(expected_columns.keys()))
-    logs_dataframe = convert_to_dataframe(parsed_logs, expected_columns)
+    logs_dataframe = convert_to_dataframe(
+        parsed_logs, expected_columns, expected_values
+    )
 
     get_metric_thresholds(logs_dataframe, "cpu", raw_data["metric_thresholds"])
     get_metric_thresholds(logs_dataframe, "mem", raw_data["metric_thresholds"])
