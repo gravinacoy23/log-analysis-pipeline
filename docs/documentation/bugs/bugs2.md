@@ -179,6 +179,11 @@ But now it is also incorrectly reflecting the current API.
 If keeping the block, update test data to be correct. When tests
 arrive, remove the block entirely.
 
+**Status** [In progress]
+
+Not sure what this referreds to, I see a correct test case in that
+block.
+
 ---
 
 ### #21 — `main.py`: `print(main())` still dumps full DataFrame
