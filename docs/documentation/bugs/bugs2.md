@@ -100,6 +100,10 @@ For a portfolio project, this signals inattention to detail.
 Update the docstring parameter names to match the actual function
 signatures.
 
+**Status** [Completed]
+
+Corrected the name of the variables in both Docstrings
+
 ---
 
 ### #18 — `run_reporting_pipeline.py`: `_dist_report` has hardcoded filename

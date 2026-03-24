@@ -101,7 +101,7 @@ def _verify_col_dtype(
 
     Args:
         log_line: Dictionary containing 1 log line from the dataset
-        expected_Dtypes: List with the expected dtypes per col, for now it's only a list that has all the cols that are supposed to be a number.
+        expected_dtypes: List with the expected dtypes per col, for now it's only a list that has all the cols that are supposed to be a number.
         line_number: current line in the iteration.
 
     Returns:
@@ -275,7 +275,7 @@ def get_metric_thresholds(
     Args:
         logs_dataframe: DF of parsed logs.
         metric: name of the metric
-        Thresholds: To clasify the logs per metric
+        thresholds: To clasify the logs per metric
     """
 
     metric_thresholds = dict(thresholds[metric])
