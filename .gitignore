@@ -12,6 +12,7 @@ __pycache__/
 venv/
 .env/
 *.env
+.idea
 
 # =========================
 # Data & Output
