@@ -61,12 +61,51 @@ def plot_distribution(logs_dataframe: pd.DataFrame, column_name: str) -> Figure:
 
 
 if __name__ == "__main__":
-    level_dict = {
-        "INFO": 10,
-        "WARNING": 1,
-        "ERROR": 1,
-    }
+    log_dicts = [
+        {
+            "timestamp": "datetime.datetime(2026, 3, 24, 3, 4, 22, tzinfo=datetime.timezone.utc)",
+            "service": "booking",
+            "user": 24,
+            "cpu": 67,
+            "mem": 43,
+            "response_time": 694,
+            "level": "INFO",
+            "msg": "Booking confirmed",
+        },
+        {
+            "timestamp": "datetime.datetime(2026, 3, 24, 3, 4, 22, tzinfo=datetime.timezone.utc)",
+            "service": "booking",
+            "user": 35,
+            "cpu": 47,
+            "mem": 43,
+            "response_time": 226,
+            "level": "INFO",
+            "msg": "Booking confirmed",
+        },
+        {
+            "timestamp": "datetime.datetime(2026, 3, 24, 3, 4, 22, tzinfo=datetime.timezone.utc)",
+            "service": "booking",
+            "user": 4,
+            "cpu": 43,
+            "mem": 46,
+            "response_time": 457,
+            "level": "INFO",
+            "msg": "Booking confirmed",
+        },
+        {
+            "timestamp": "datetime.datetime(2026, 3, 24, 3, 4, 22, tzinfo=datetime.timezone.utc)",
+            "service": "booking",
+            "user": 98,
+            "cpu": 52,
+            "mem": 60,
+            "response_time": 718,
+            "level": "INFO",
+            "msg": "Seat booked",
+        },
+    ]
 
-    sns.countplot(level_dict)
+    logs_dataframe = pd.DataFrame(log_dicts)
+
+    plot_distribution(logs_dataframe, "response_time")
 
     plt.show()

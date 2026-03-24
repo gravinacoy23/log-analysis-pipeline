@@ -149,6 +149,11 @@ Running the module directly produces unexpected behavior. The
 Either update the `__main__` block to use a proper DataFrame for
 testing, or clean it up to reflect the current function signatures.
 
+**Status** [Completed]
+
+Added an updates if block with a list with 4 logs, conver to DF and
+then passed to one of the functions.
+
 ---
 
 ## P3 — Good Improvements, Lower Urgency
