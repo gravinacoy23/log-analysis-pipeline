@@ -1,13 +1,77 @@
 from typing import Any
 import pandas as pd
 import logging
+from typing import KeysView
 
 
 logger = logging.getLogger(__name__)
 
 
+def convert_to_dataframe(
+    log_dicts: list[dict[str, Any]],
+    expected_columns: dict[str, str],
+    expected_values: dict[str, list[str]],
+) -> pd.DataFrame:
+    """Converts the list of parsed logs into a dataframe.
+
+    Args:
+        log_dicts: Parsed logs.
+        expected_columns: All the required columns loaded from the config file.
+        expected_values: dict that maps a set of columns to their expected values, ie level.
+
+    Returns:
+        Logs in a pd.dataframe object."""
+
+    verified_log_dicts = _validation_orchestrator(
+        log_dicts, expected_columns, expected_values
+    )
+
+    logs_dataframe = pd.DataFrame(verified_log_dicts)
+
+    return logs_dataframe
+
+
+def _validation_orchestrator(
+    log_dicts: list[dict[str, Any]],
+    expected_columns: dict[str, str],
+    expected_values: dict[str, list[str]],
+) -> list[dict[str, Any]]:
+    """Orchestrates the validation of the log dicts before converting to Dataframe
+
+    Args:
+        log_dicts: Parsed logs
+        expected_columns: All the required columns loaded from the config file.
+        expected_values: dict that maps a set of columns to their expected values, ie level.
+
+    Returns:
+        List of dicts with all the verified logs, dropping the lines with incorrect values or data types for int.
+    """
+
+    _verify_columns(log_dicts, expected_columns.keys())
+
+    col_dtypes = list()
+    verified_log_dicts = list()
+
+    for col, data_type in expected_columns.items():
+        if data_type == "int":
+            col_dtypes.append(col)
+
+    for line_number, log in enumerate(log_dicts, start=1):
+        line_verified = _verify_col_dtype(log, col_dtypes, line_number)
+
+        if not line_verified:
+            continue
+
+        line_verified = _verify_col_values(log, expected_values, line_number)
+
+        if line_verified:
+            verified_log_dicts.append(log)
+
+    return verified_log_dicts
+
+
 def _verify_columns(
-    log_dicts: list[dict[str, Any]], expected_columns: list[str]
+    log_dicts: list[dict[str, Any]], expected_columns: KeysView[str]
 ) -> None:
     """Verifies that the parsed logs are not empty and contain the required columns.
 
@@ -31,59 +95,51 @@ def _verify_columns(
 
 
 def _verify_col_dtype(
-    log_dicts: list[dict[str, Any]], expected_cols: dict[str, str]
-) -> list[dict[str, Any]]:
-    """Verify all the cols have the correct data type
+    log_line: dict[str, Any], expected_dtypes: list[str], line_number: int
+) -> bool:
+    """Verify all the cols have the correct data type, for now only verifies INT dtype cols
 
     Args:
-        log_dicts: List of parser logs
-        expected_cols: Expected cols with Dtypes from the config file
+        log_line: Dictionary containing 1 log line from the dataset
+        expected_Dtypes: List with the expected dtypes per col, for now it's only a list that has all the cols that are supposed to be a number.
+        line_number: current line in the iteration.
 
     Returns:
-        List of dicts with all the verified logs, drops the lines that have an incorrect data type.
+        Whether or not the current line was verified: true/false.
     """
 
-    _verify_columns(log_dicts, list(expected_cols.keys()))
+    for int_col in expected_dtypes:
+        if not isinstance(log_line[int_col], int):
+            logger.warning(
+                f"The column {int_col} does not contain int data type at line {line_number}"
+            )
+            return False
 
-    int_type_cols = list()
-    verified_log_dicts = list()
-
-    for col, data_type in expected_cols.items():
-        if data_type == "int":
-            int_type_cols.append(col)
-
-    for line_number, log in enumerate(log_dicts, start=1):
-        line_verified = True
-        for int_col in int_type_cols:
-            if not isinstance(log[int_col], int):
-                logger.warning(
-                    f"The column {int_col} does not contain int data type at line {line_number}"
-                )
-                line_verified = False
-                break
-
-        if line_verified:
-            verified_log_dicts.append(log)
-
-    return verified_log_dicts
+    return True
 
 
-def convert_to_dataframe(
-    log_dicts: list[dict[str, Any]], expected_columns: dict[str, str]
-) -> pd.DataFrame:
-    """Converts the list of parsed logs into a dataframe.
+def _verify_col_values(
+    log_line: dict[str, Any], expected_values: dict[str, list[str]], line_number: int
+) -> bool:
+    """Verifies that the given columns had the corresponding expectyed values.
 
     Args:
-        log_dicts: Parsed logs.
-        expected_columns: All the required columns loaded from the config file.
+        log_line: Dictionary containing 1 log line from the dataset.
+        expected_values: contains a mapping of given columns to the possible values.
+        line_number: current line in the iteration
 
     Returns:
-        Logs in a pd.dataframe object."""
+        Whether or not the current line passed verification.
+    """
 
-    verified_log_dicts = _verify_col_dtype(log_dicts, expected_columns)
-    logs_dataframe = pd.DataFrame(verified_log_dicts)
+    for column in expected_values.keys():
+        if log_line[column] not in expected_values[column]:
+            logger.warning(
+                f"The column {column}, contains an unexpected value: {log_line[column]} at line {line_number}"
+            )
+            return False
 
-    return logs_dataframe
+    return True
 
 
 def convert_corr_matrix(logs_dataframe: pd.DataFrame) -> pd.DataFrame:
@@ -314,4 +370,9 @@ if __name__ == "__main__":
         "msg": "str",
     }
 
-    logs_dataframe = convert_to_dataframe(log_dicts, expected_columns)
+    expected_values = {
+        "service": ["shopping", "pricing", "booking"],
+        "level": ["INFO", "WARNING", "ERROR"],
+    }
+
+    logs_dataframe = convert_to_dataframe(log_dicts, expected_columns, expected_values)
