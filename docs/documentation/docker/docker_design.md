@@ -134,7 +134,7 @@ docker build -t log-pipeline .
 ## Run the pipeline
 
 ```bash
-docker run log-pipeline
+docker run -v $(pwd)/output:/log-analysis-pipeline/output log_analysis:latest
 ```
 
 ## Run with a different service
