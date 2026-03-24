@@ -1,7 +1,7 @@
 from typing import Any
+from collections.abc import KeysView
 import pandas as pd
 import logging
-from typing import KeysView
 
 
 logger = logging.getLogger(__name__)

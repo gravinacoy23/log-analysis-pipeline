@@ -75,6 +75,10 @@ pattern.
 Consolidate into a single import. Consider whether `collections.abc`
 is more appropriate for `KeysView`.
 
+**Status** [Completed]
+
+Switched to `collections.abc.KeysView` for the typing.
+
 ---
 
 ### #17 — `log_analysis.py`: Docstring parameter names don't match code
