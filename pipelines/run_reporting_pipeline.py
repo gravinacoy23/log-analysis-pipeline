@@ -90,7 +90,7 @@ def _dist_report(logs_dataframe: pd.DataFrame, metric_name: str) -> dict[str, Fi
         A dict that contains the name of the file and the Figure object.
     """
 
-    file_name = "distribution_report.png"
+    file_name = f"{metric_name}_distribution_report.png"
     dist_plot = plot_distribution(logs_dataframe, metric_name)
 
     return {file_name: dist_plot}

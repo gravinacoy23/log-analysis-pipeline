@@ -125,6 +125,11 @@ follow different naming conventions for no clear reason.
 Use a dynamic filename in `_dist_report` following the same pattern
 as `_count_report`: `f"{metric_name}_distribution_plot.png"`.
 
+**Status** [Completed]
+
+Added the file name for the distribution report as a dynamic name
+taking into account `metric_name`
+
 ---
 
 ### #19 — `log_visualizer.py`: `__main__` block has broken code
