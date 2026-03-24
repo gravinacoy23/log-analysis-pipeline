@@ -7,6 +7,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN python3 scripts/log_generator.py -c 100
+RUN python3 scripts/log_generator.py -c 2000
 
 CMD ["python","main.py"]
