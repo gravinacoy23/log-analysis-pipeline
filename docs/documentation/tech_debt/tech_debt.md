@@ -423,3 +423,23 @@ are a foundation but not sufficient for full observability.
 
 **Target:** Month 2 — when the analysis layer matures and visualization
 work begins in depth.
+
+---
+
+### 🔵 Handle edge case where .min() exceeds first threshold boundary
+
+**Current behavior**
+`get_metric_thresholds()` uses `logs_dataframe[metric].min()` as the
+lower edge of the first bin. If the dataset is small or filtered and
+the minimum value is higher than the first threshold in the config,
+the edges are not monotonically increasing and `pd.cut()` raises a
+`ValueError`.
+
+**Why it matters**
+With the full dataset (~2000 rows) this does not occur because the
+generator's ranges guarantee values below the first threshold. But
+with filtered or partial datasets — for example after quality checks
+remove lines — the edge case can surface.
+
+**Target:** Month 3 — when the pipeline handles more diverse datasets
+and edge cases become more likely.
