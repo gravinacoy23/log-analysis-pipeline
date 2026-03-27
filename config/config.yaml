@@ -60,3 +60,7 @@ metric_thresholds:
     low: 52
     normal: 63
     high: 75
+
+feature_thresholds:
+  high_rt: 800
+  high_cpu: 70
