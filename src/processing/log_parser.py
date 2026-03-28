@@ -9,7 +9,9 @@ logger = logging.getLogger(__name__)
 def parse_logs(
     logs: Iterator[str], expected_cols: list[str]
 ) -> tuple[list[dict[str, Any]], dict[str, int | float] | dict[str, int]]:
-    """Parses the raw logs received from the reader in an understandable format for pandas.
+    """
+    Parses the raw logs received from the reader in an understandable format
+    for pandas.
 
     Args:
         logs: Iterator containing the strings of all log lines.
@@ -54,7 +56,8 @@ def parse_logs(
 def _parse_fields(
     logs_without_message: list[str], line_number: int
 ) -> dict[str, Any] | None:
-    """Parses the portion of the logs that do not contain the message.
+    """
+    Parses the portion of the logs that do not contain the message.
 
     Args:
         logs_without_message: Partitioned log line prior to the message.
@@ -90,7 +93,8 @@ def _parse_fields(
 def _verify_columns(
     logs_dict: dict[str, Any], expected_cols: list[str], line_number: int
 ) -> bool:
-    """Verifies that a given line in the logs has all the required columns.
+    """
+    Verifies that a given line in the logs has all the required columns.
 
     Args:
         logs_dict: contains the key value pairs of the log of the current iteration.

@@ -8,7 +8,8 @@ import argparse
 
 
 def _load_config() -> dict[str, Any]:
-    """Load constant variables from the config file.
+    """
+    Load constant variables from the config file.
 
     Returns:
         Dictionary with all config data for the auxiliary functions.
@@ -32,7 +33,8 @@ def _load_config() -> dict[str, Any]:
 
 
 def _generate_log_timestamp() -> str:
-    """Generate the timestamp for the log.
+    """
+    Generate the timestamp for the log.
 
     Returns:
         String with the current date time in GMT time.
@@ -42,7 +44,8 @@ def _generate_log_timestamp() -> str:
 
 
 def _generate_runtimestamp() -> str:
-    """Generate the run timestamp for the name of the file.
+    """
+    Generate the run timestamp for the name of the file.
 
     Returns:
         String with the current date time in GMT time.
@@ -52,7 +55,8 @@ def _generate_runtimestamp() -> str:
 
 
 def _generate_service(services: list[str]) -> str:
-    """Chooses a random service for the log.
+    """
+    Chooses a random service for the log.
 
     Args:
         services: List with all the services available.
@@ -65,7 +69,8 @@ def _generate_service(services: list[str]) -> str:
 
 
 def _generate_message(service: str, message_list: dict[str, list[str]]) -> str:
-    """Generates a message available for the given service.
+    """
+    Generates a message available for the given service.
 
     Args:
         service: A string with the name of the service.
@@ -80,7 +85,8 @@ def _generate_message(service: str, message_list: dict[str, list[str]]) -> str:
 
 
 def _make_raw_directory() -> Path:
-    """Makes the directory in which we are going to save the service logs.
+    """
+    Makes the directory in which we are going to save the service logs.
 
     Returns:
         Path object with the path to the directory for the .log files.
@@ -94,7 +100,8 @@ def _make_raw_directory() -> Path:
 
 
 def _make_service_directories(raw_dir: Path, services: list[str]) -> None:
-    """Makes a dedicated directory for each service.
+    """
+    Makes a dedicated directory for each service.
 
     Args:
         raw_dir: Directory in which we are saving the new dirs.
@@ -109,7 +116,9 @@ def _make_service_directories(raw_dir: Path, services: list[str]) -> None:
 def _create_files(
     services: list[str], target_path: Path, run_timestamp: str
 ) -> dict[str, TextIOWrapper]:
-    """Creates the files for each service in the dedicated service path and opens it.
+    """
+    Creates the files for each service in the dedicated service path and opens
+    it.
 
     Args:
         services: All the available services
@@ -131,7 +140,8 @@ def _create_files(
 
 
 def _close_files(file_handles: dict[str, TextIOWrapper]) -> None:
-    """Closes all the files at the end of the execution
+    """
+    Closes all the files at the end of the execution.
 
     Args:
         file_handles: Dict that matches the name of the service with the corresponding handle.
@@ -144,7 +154,8 @@ def _close_files(file_handles: dict[str, TextIOWrapper]) -> None:
 def _write_log(
     file_handles: dict[str, TextIOWrapper], service: str, log_line: str
 ) -> None:
-    """Writes the log line in the corresponding file
+    """
+    Writes the log line in the corresponding file.
 
     Args:
         file_handles: Dict that matches the name of the service with the corresponding handle.
@@ -167,7 +178,8 @@ def _format_log(
     level: str,
     message: str,
 ) -> str:
-    """Formats the log line with all the required fields.
+    """
+    Formats the log line with all the required fields.
 
     Args:
         timestamp: timestamp when the log got generated
@@ -187,7 +199,8 @@ def _format_log(
 
 
 def _generate_user() -> int:
-    """Generate a random user.
+    """
+    Generate a random user.
 
     Returns:
         Random int between 1 and 100.
@@ -197,7 +210,8 @@ def _generate_user() -> int:
 
 
 def _generate_memory() -> int:
-    """Generate a random memory usage.
+    """
+    Generate a random memory usage.
 
     Returns:
         Random int between 40 and 75.
@@ -207,7 +221,8 @@ def _generate_memory() -> int:
 
 
 def _generate_cpu() -> int:
-    """Generate random CPU usage.
+    """
+    Generate random CPU usage.
 
     Returns:
         Random int between 30 and 70.
@@ -217,7 +232,8 @@ def _generate_cpu() -> int:
 
 
 def _generate_response_time(cpu: int) -> int:
-    """Generate the response time based on the CPU usage.
+    """
+    Generate the response time based on the CPU usage.
 
     Args:
         cpu: CPU usage for the given log.
@@ -235,7 +251,8 @@ def _generate_response_time(cpu: int) -> int:
 
 
 def _determine_level(response_time: int, levels: list[str]) -> str:
-    """Determine the level for the log based on the response time
+    """
+    Determine the level for the log based on the response time.
 
     Args:
         response_time: Response time for the log
@@ -259,8 +276,9 @@ def _determine_level(response_time: int, levels: list[str]) -> str:
 def _generator_loop(
     iterations: int, raw_data: dict[str, Any], file_handles: dict[str, TextIOWrapper]
 ) -> None:
-    """Generates all the log lines for a given number of times and calls the corresponding auxiliary
-        functions to genrerate format and write the log.
+    """
+    Generates all the log lines for a given number of times and calls the
+    corresponding auxiliary functions to genrerate format and write the log.
 
     Args:
         iterations: Number of logs to be generated.
@@ -288,11 +306,13 @@ def _generator_loop(
 
 
 def generate_logs(iterations: int) -> None:
-    """Orchestrates the log generation calling auxiliary functions to generate the data needed
-        for the loop that generates the logs
+    """
+    Orchestrates the log generation calling auxiliary functions to generate the
+    data needed for the loop that generates the logs.
 
     Args:
-        iterations: number of logs you are generating"""
+        iterations: number of logs you are generating
+    """
 
     directory = _make_raw_directory()
     run_timestamp = _generate_runtimestamp()

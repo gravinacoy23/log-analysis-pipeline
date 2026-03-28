@@ -6,7 +6,9 @@ import pandas as pd
 
 
 def run_pipeline(service: str, raw_data: dict[str, Any]) -> pd.DataFrame:
-    """Orchestrates the functions call to process the raw log files and convert them to a pandas dataframe.
+    """
+    Orchestrates the functions call to process the raw log files and convert
+    them to a pandas dataframe.
 
     Args:
         service: name of the service to process.
