@@ -10,16 +10,27 @@ def load_config() -> dict[str, Any]:
         All the config loaded in a dict
 
     Raises:
-        ValueError: When the columns do not exist in the config file
+        ValueError: When one of the required keys is missing in the config file.
     """
     parent_path = Path(__file__).resolve().parents[1]
     config_file = parent_path / "config" / "config.yaml"
 
+    required_keys = [
+        "service",
+        "level",
+        "columns",
+        "metric_thresholds",
+        "feature_thresholds",
+    ]
+
     with config_file.open("r") as f:
         data = yaml.safe_load(f)
 
-        if not data.get("columns"):
-            raise ValueError("Your columns do not exist in the config file.")
+        for key in required_keys:
+            if not data.get(key):
+                raise ValueError(
+                    f"the required key {key} does not exist in the config file."
+                )
 
         return data
 

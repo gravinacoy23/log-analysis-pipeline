@@ -94,6 +94,12 @@ Add validation for `feature_thresholds` in `load_config()`. Consider
 whether other keys (`service`, `level`, `metric_thresholds`) should
 also be validated here for consistency.
 
+**Status** [Completed]
+
+Added a list of required keys to the config loader that validates that
+all the required keys are in the config file, whenever a new col is added
+and needed by one of the pipelines it will need to be added to this validation.
+
 ---
 
 ### #25 — `log_parser.py`: Docstring return description is imprecise
