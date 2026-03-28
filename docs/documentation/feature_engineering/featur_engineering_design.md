@@ -1,4 +1,4 @@
-# Feature Engineering Module — Design (v1)
+# Feature Engineering Module — Design (v2)
 
 ## Objective
 
@@ -44,6 +44,8 @@ src/features/feature_engineering.py
 - `logs_dataframe` — pandas DataFrame with validated log data
 - `thresholds` — dict mapping threshold names to int values,
   loaded from `config.yaml` under `feature_thresholds`
+- `services` — list of service names from `config.yaml`, used
+  to derive the numeric encoding for `service_encoded`
 
 ### Returns
 
@@ -172,6 +174,100 @@ src/features/feature_engineering.py
 
 ---
 
+## Function: _hour_of_day()
+
+### Parameters
+
+- `logs_dataframe` — pandas DataFrame with validated log data
+
+### Returns
+
+- `pd.Series` — integer Series named `"hour_of_day"`, values
+  0–23 representing the hour extracted from the timestamp
+
+### Implementation Details
+
+- Uses the `.dt.hour` accessor on the timestamp column
+- Renames the resulting Series using `.rename()`
+
+### Design Decisions
+
+- **Hour only, no minutes or seconds.** The purpose of this
+  feature is to detect load patterns by time of day (peak vs
+  off-peak). Minutes and seconds add noise without signal —
+  both 14:37:22 and 14:12:45 belong to the same hourly
+  pattern. The 0–23 range gives 24 distinct buckets.
+
+---
+
+## Function: _service_encoded()
+
+### Parameters
+
+- `logs_dataframe` — pandas DataFrame with validated log data
+- `services` — list of service names from config
+
+### Returns
+
+- `pd.Series` — integer Series named `"service_encoded"`,
+  mapping each service name to a numeric value starting at 1
+
+### Implementation Details
+
+- Builds a mapping dict from the services list using
+  `enumerate(services, start=1)`
+- Applies the mapping to the `service` column using
+  `.map(services_map)`
+- Renames the resulting Series using `.rename()`
+
+### Design Decisions
+
+- **Mapping derived from config list, not hardcoded.** The
+  services list already exists in `config.yaml`. Using
+  `enumerate` on that list produces the mapping automatically.
+  If a service is added or removed, the encoding updates
+  without code changes.
+
+- **Starts at 1, not 0.** Avoids ambiguity — 0 could be
+  confused with a missing or default value in downstream
+  analysis.
+
+- **Receives the services list, not the full config.** Same
+  decoupling pattern as `_is_slow` — the function does not
+  know the config structure. The orchestrator extracts and
+  passes only what is needed.
+
+---
+
+## Function: _cpu_mem_ratio()
+
+### Parameters
+
+- `logs_dataframe` — pandas DataFrame with validated log data
+
+### Returns
+
+- `pd.Series` — float Series named `"cpu_mem_ratio"`,
+  representing the ratio of CPU usage to memory usage
+
+### Implementation Details
+
+- Divides the `cpu` column by the `mem` column element-wise
+- Renames the resulting Series using `.rename()`
+
+### Design Decisions
+
+- **Ratio as a derived feature.** CPU and memory individually
+  tell part of the story. Their ratio captures the relationship
+  between the two — a high CPU with low memory is a different
+  signal than high CPU with high memory. This gives ML models
+  an additional dimension without adding new raw data.
+
+- **No threshold or config needed.** The ratio is a pure
+  mathematical derivation with no configurable boundary.
+
+---
+
 ## Config Structure
 
 ```yaml
@@ -185,11 +281,18 @@ and extracts individual values for each feature function.
 
 ---
 
-## Planned Features (Not Yet Implemented)
+## Changes from v1
 
-- `hour_of_day` — extracted from timestamp column
-- `service_encoded` — numeric encoding of service name
-- `cpu_mem_ratio` — cpu / mem as a derived numeric feature
+- Added `services` parameter to `orchestrate_features()` —
+  needed for `_service_encoded()` mapping
+- Added `_hour_of_day()` — extracts hour from timestamp
+- Added `_service_encoded()` — numeric encoding derived from
+  config service list using `enumerate`
+- Added `_cpu_mem_ratio()` — CPU / memory ratio as derived
+  numeric feature
+- All 5 planned features now implemented
+- "Context columns in final dataset" removed from Future
+  Improvements — resolved in v1 with `_context_cols()`
 
 ---
 
