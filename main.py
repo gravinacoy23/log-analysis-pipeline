@@ -1,6 +1,7 @@
 import argparse
 import logging
 import pandas as pd
+from src.config_loader import load_config
 from pipelines.run_pipeline import run_pipeline
 from pipelines.run_reporting_pipeline import report_pipeline
 
@@ -15,7 +16,9 @@ def main(service_name: str) -> pd.DataFrame:
         Parsed logs dataframe
     """
 
-    logs_dataframe = run_pipeline(service_name)
+    config_data = load_config()
+
+    logs_dataframe = run_pipeline(service_name, config_data)
     report_pipeline(logs_dataframe)
 
     return logs_dataframe

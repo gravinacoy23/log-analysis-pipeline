@@ -1,4 +1,4 @@
-# Run Pipeline — Implementation (v5)
+# Run Pipeline — Implementation (v6)
 
 ## Objective
 
@@ -7,7 +7,7 @@ Implement the pipeline orchestrator for the log analysis pipeline.
 The goal of this file is to:
 
 - Coordinate the ingestion, processing, and analysis layers
-- Load pipeline configuration
+- Receive pipeline configuration from the caller
 - Pass data and config between pipeline stages
 - Return a validated DataFrame to the caller
 
@@ -16,14 +16,15 @@ The goal of this file is to:
 # System Context
 
 `run_pipeline.py` is the orchestration layer. It knows about the
-pipeline stages and connects them together. It loads configuration
-that the pipeline needs and passes it to the modules that require it.
+pipeline stages and connects them together. It receives configuration
+from `main.py` and passes relevant values to the modules that
+require them.
 
 ```
-main.py → run_pipeline.py → config_loader.py (config)
-                           → log_reader.py (raw logs)
-                           → log_parser.py (parsed + validated logs)
-                           → log_analysis.py (fully validated DataFrame)
+main.py → load_config() → config dict
+       → run_pipeline.py → log_reader.py (raw logs)
+                         → log_parser.py (parsed + validated logs)
+                         → log_analysis.py (fully validated DataFrame)
 ```
 
 ---
@@ -38,13 +39,14 @@ pipelines/run_pipeline.py
 
 # Interface
 
-## `run_pipeline(service)`
+## `run_pipeline(service, raw_data)`
 
 Orchestrates the full log ingestion, parsing, and analysis pipeline
 for a given service.
 
 **Parameters:**
 - `service` (str) — name of the service to process (e.g. `"booking"`)
+- `raw_data` (dict[str, Any]) — full config dict loaded by main.py
 
 **Returns:**
 - `pd.DataFrame` — validated DataFrame with parsed log data
@@ -56,21 +58,20 @@ for a given service.
 ## Pipeline Flow
 
 ```
-1. load_config()                                         → config dict
-2. extract expected_columns from config["columns"]       → dict[str, str]
-3. extract column names via list(.keys())                → list[str]
-4. build expected_values from config["service"] and
-   config["level"]                                       → dict[str, list[str]]
-5. load_service_logs(service)                            → iterator of raw strings
-6. parse_logs(raw_logs, column_names)                    → list of parsed dicts
-7. convert_to_dataframe(parsed_logs, expected_columns,
-   expected_values)                                      → fully validated DataFrame
-8. get_metric_thresholds(df, "cpu", thresholds)          → mutates DataFrame
-9. get_metric_thresholds(df, "mem", thresholds)          → mutates DataFrame
+1. extract expected_columns from raw_data["columns"]       → dict[str, str]
+2. extract column names via list(.keys())                   → list[str]
+3. build expected_values from raw_data["service"] and
+   raw_data["level"]                                        → dict[str, list[str]]
+4. load_service_logs(service)                               → iterator of raw strings
+5. parse_logs(raw_logs, column_names)                       → list of parsed dicts
+6. convert_to_dataframe(parsed_logs, expected_columns,
+   expected_values)                                         → fully validated DataFrame
+7. get_metric_thresholds(df, "cpu", thresholds)             → mutates DataFrame
+8. get_metric_thresholds(df, "mem", thresholds)             → mutates DataFrame
 ```
 
-The config is loaded once at the start. The pipeline extracts and
-adapts config values for each stage:
+The config is received from `main.py` as a parameter. The pipeline
+extracts and adapts config values for each stage:
 
 - **Parser** receives `list[str]` of column names — for field
   presence validation per line
@@ -106,11 +107,12 @@ intermediate steps not exposed to the caller.
 
 # Design Decisions
 
-## Config loaded once in the orchestrator
-The pipeline loads `config.yaml` once via `config_loader.py` and passes
-relevant values to each stage. This avoids modules reading config
-independently and ensures the config file is only accessed once per
-pipeline run.
+## Config received from caller, not loaded internally
+Previously `run_pipeline` loaded config independently via
+`load_config()`. Now it receives the config dict from `main.py`.
+This eliminates redundant config loading when multiple pipelines
+need the same config, and makes the dependency explicit in the
+function signature.
 
 ## Orchestrator adapts config format per stage
 The pipeline extracts column names as a `list[str]` for the parser,
@@ -133,23 +135,25 @@ without needing a mapping layer.
 
 ## Single responsibility
 `run_pipeline` orchestrates. It does not validate inputs, configure
-logging, or handle CLI arguments. Each layer has one job.
+logging, load configuration, or handle CLI arguments. Each layer has
+one job.
 
 ## pipelines/ directory
 The `pipelines/` directory is plural by design. As the project grows,
 additional pipelines can be added here — for example a training pipeline
-or a reporting pipeline — each with its own file and clear responsibility.
+or a feature pipeline — each with its own file and clear responsibility.
 
 ---
 
-# Changes from v4
+# Changes from v5
 
-- `expected_values` dict constructed from `raw_data["service"]` and
-  `raw_data["level"]` — maps categorical column names to valid values
-- `convert_to_dataframe()` now receives three parameters:
-  `parsed_logs`, `expected_columns`, and `expected_values`
-- Pipeline flow updated to reflect the construction and passing of
-  `expected_values` for categorical content validation
+- `load_config()` removed — config is now received as `raw_data`
+  parameter from `main.py`
+- `load_config` import removed from the module
+- Function signature updated: `run_pipeline(service, raw_data)`
+- Pipeline flow updated to reflect that config extraction happens
+  from the received dict, not from a local load
+- System context diagram updated to show config flowing from main
 
 ---
 
