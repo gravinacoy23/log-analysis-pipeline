@@ -179,10 +179,9 @@ But now it is also incorrectly reflecting the current API.
 If keeping the block, update test data to be correct. When tests
 arrive, remove the block entirely.
 
-**Status** [In progress]
+**Status** [Completed]
 
-Not sure what this referreds to, I see a correct test case in that
-block.
+Fixed under code refinement 15
 
 ---
 
@@ -201,6 +200,10 @@ unreadable.
 **What to do:**
 This is a development convenience. Consider removing the print or
 replacing with a summary message (e.g. row count, service analyzed).
+
+**Status** [Not needed]
+
+This is still usefull for debugging.
 
 ---
 
