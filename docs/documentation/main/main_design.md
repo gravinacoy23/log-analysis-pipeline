@@ -59,13 +59,7 @@ pipeline, and the features pipeline in sequence.
 `main()` loads the config once via `load_config()` and passes the
 full config dict to each pipeline that needs it. This ensures:
 
-- The config file is read once per execution, not once per pipeline
-- Each pipeline receives what it needs without loading config
-  independently
-- Adding a new pipeline that needs config only requires passing
-  the dict — no new `load_config()` calls
-
-## Logging Configuration
+-  Logging Configuration
 
 Logging is configured using `logging.basicConfig()` before any other
 call in the `if __name__` block. This ensures all loggers across the
@@ -74,19 +68,17 @@ configuration.
 
 ```python
 logging.basicConfig(
-    level=logging.WARNING,
+    level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 ```
 
 The format includes timestamp, module name, level, and message — enough
-context to identify when and where an issue occurred.
+context to identify when and where an issue occurred. The level is set
+to `INFO` to surface parsing statistics alongside warnings.
 
-> Important: `logging.basicConfig()` is called before `argparse` and
-> before any function that could trigger a log event. Order matters.
-
-## Argument Parsing
+># Argument Parsing
 
 Uses `argparse` to accept the service name from the command line:
 
@@ -117,10 +109,7 @@ features pipelines. `main()` does not modify or inspect it.
 
 # Design Decisions
 
-## Config loaded once in main, passed to pipelines
-Previously each pipeline loaded config independently. Moving
-`load_config()` to `main()` eliminates redundant file reads and
-makes `main()` the single source of configuration for all pipelines.
+#akes `main()` the single source of configuration for all pipelines.
 This also makes it explicit which pipelines depend on config —
 visible in the function signatures.
 
@@ -168,4 +157,16 @@ This makes the pipeline reusable without modifying source code.
   production-grade logging configuration — supports multiple handlers,
   log rotation, and environment-specific settings
 - Support running multiple services in a single execution
-- Add a `--output` argument to persist results to a file
+- Add a `--output` argument to persist results to a file# Config loaded once in main, passed to pipelines
+Previously each pipeline loaded config independently. Moving
+`load_config()` to `main()` eliminates redundant file reads and
+m Important: `logging.basicConfig()` is called before `argparse` and
+> before any function that could trigger a log event. Order matters.
+
+#The config file is read once per execution, not once per pipeline
+- Each pipeline receives what it needs without loading config
+  independently
+- Adding a new pipeline that needs config only requires passing
+  the dict — no new `load_config()` calls
+
+##
