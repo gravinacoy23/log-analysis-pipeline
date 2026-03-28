@@ -142,6 +142,10 @@ rest of the project. Minor, but visible in a portfolio project.
 **What to do:**
 Remove the extra blank line.
 
+**Status** [Completed]
+
+Corrected
+
 ---
 
 ## Summary
