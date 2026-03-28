@@ -10,7 +10,7 @@ Each item includes context on why it was deferred and when it makes sense to imp
 | Symbol | Meaning |
 |--------|---------|
 | 🟡 | Implement soon — Month 1 or 2 |
-| 🔵 | Implement in Phase 1 — Month 3 |
+| 🔵 | Implement in Phase 1 — Month 3 or 4 |
 | 🟣 | Implement in Phase 2 — Month 6+ |
 
 ---
@@ -30,7 +30,7 @@ In a real system, high memory pressure also degrades response times. Adding this
 correlation will make the dataset more realistic and introduce a second feature
 that ML models can learn from.
 
-**Target:** Month 2 — after gaining more experience with data analysis and correlation patterns.
+**Target:** Month 3 — after gaining more experience with data analysis and correlation patterns.
 
 ---
 
@@ -137,32 +137,13 @@ resolution explicit and portable across environments.
 
 ### 🟡 Read all log files for a service instead of just the first one
 
-**Current behavior**
-The reader selects only the first file it finds in the service directory.
-
-**Why it matters**
-Analysis is currently limited to a single log file regardless of how many exist.
-For meaningful analysis, the reader should aggregate all available files for a
-service into a single list of log lines.
-
-**Target:** Month 1 (Week 3–4) — required before analysis results become statistically meaningful.
-
-**Status** [Completed]
+**Status** [Completed — Sprint 3]
 
 ---
 
 ### 🟡 Read logs across all services and return a consolidated result
 
-**Current behavior**
-The reader requires a specific service name and returns logs for that service only.
-
-**Why it matters**
-Supporting multi-service reads would allow the pipeline to analyze the full system —
-for example, detecting correlations between shopping and booking load patterns.
-
-**Target:** Month 2 — when cross-service analysis becomes part of the work.
-
-**Status** [Completed]
+**Status** [Completed — Sprint 3]
 
 ---
 
@@ -179,24 +160,28 @@ or logs from a specific date, without loading everything into memory first.
 
 ---
 
+### 🔵 Add encoding parameter for flexibility
+
+**Current behavior**
+The reader opens files with default encoding. No way to specify
+an alternative encoding.
+
+**Why it matters**
+If log files are produced by systems using non-UTF-8 encoding,
+the reader would fail silently or produce garbled data.
+
+**Target:** Month 3 or later — only if the project encounters
+encoding issues.
+
+---
+
 ## Log Parser
 
 ---
 
 ### 🟡 Validate that all expected fields are present before accepting a line
 
-**Current behavior**
-A line is only rejected if a field cannot be split into a `key=value` pair.
-A syntactically valid line missing a field like `cpu` or `response_time` would
-pass through and produce an incomplete dictionary.
-
-**Why it matters**
-Adding field presence validation would catch this class of errors explicitly
-and prevent incomplete data from reaching the analysis layer.
-
-**Target:** Month 2 — aligns with data cleaning and handling malformed data in depth.
-
-**Status** [Completed]
+**Status** [Completed — Sprint 4]
 
 Added `_verify_columns()` to the parser — validates each parsed dict
 against expected columns from config before accepting it. Also added
@@ -208,16 +193,13 @@ empty value guard clause in `_parse_fields()` — rejects fields like
 
 ### 🟡 Return parsing statistics alongside the parsed result
 
-**Current behavior**
-The parser silently skips malformed lines and logs a warning. There is no way
-for the caller to know how many lines were skipped or what percentage of the
-input was valid.
+**Status** [Completed — Sprint 5]
 
-**Why it matters**
-Returning a summary (lines processed, lines skipped, skip rate) would improve
-observability and make the pipeline easier to monitor and debug.
-
-**Target:** Month 2 — useful for data quality analysis and pipeline monitoring.
+`parse_logs` now returns a tuple: `(list[dict], stats_dict)`. Stats
+include lines_processed, skipped_lines, and skip_rate. A `_skip_report()`
+function builds and logs the statistics at INFO level. Empty input
+(0/0) is handled with a WARNING and skip_rate is omitted to avoid
+division by zero.
 
 ---
 
@@ -275,41 +257,42 @@ services and return consolidated results.
 
 ### 🟡 Read all log files for a service, not just the first
 
-**Current behavior**
-The orchestrator instructs the reader to return only the first log file found.
-
-**Why it matters**
-This is the pipeline-level counterpart of the reader improvement above.
-The orchestrator should support aggregating all files for a service.
-
-**Target:** Month 1 (Week 3–4) — same priority as the reader improvement.
+**Status** [Completed — Sprint 3]
 
 ---
 
 ### 🟡 Return pipeline metadata alongside the parsed result
 
-**Current behavior**
-`run_pipeline` returns only the list of parsed log dicts with no additional context.
+**Status** [Partially completed — Sprint 5]
 
-**Why it matters**
-Adding metadata such as lines processed, lines skipped, and execution time would
-improve observability and make the pipeline easier to monitor and debug.
-
-**Target:** Month 2 — when reporting becomes part of the pipeline output.
+`parse_logs` now returns stats alongside parsed data. The pipeline
+unpacks `parse_stats` but does not yet surface it to the caller or
+use it beyond the parser's own logging.
 
 ---
 
 ### 🟡 Add a reporting or persistence step after parsing
 
+**Status** [Completed — Sprint 4]
+
+Reporting pipeline and features pipeline both consume the DataFrame
+produced by `run_pipeline`.
+
+---
+
+### 🔵 Surface parse_stats to caller or logs
+
 **Current behavior**
-The pipeline ends after parsing. Results are returned to the caller with no
-persistence or reporting.
+`parse_stats` is available in `run_pipeline` after unpacking the
+tuple from `parse_logs`, but it is not used or surfaced.
 
 **Why it matters**
-Adding an optional step to persist results to a file (CSV, JSON) or generate
-a summary report would make the pipeline more useful as a standalone tool.
+The pipeline has no visibility into data loss between raw logs and
+the final DataFrame beyond what the parser logs internally. Surfacing
+stats to the caller or to pipeline-level logs would improve
+observability.
 
-**Target:** Month 2 — when the analysis layer is more mature.
+**Target:** Month 3–4 — when pipeline monitoring becomes a focus.
 
 ---
 
@@ -319,21 +302,7 @@ a summary report would make the pipeline more useful as a standalone tool.
 
 ### 🟡 Generalize reporting pipeline to support multiple report types
 
-**Current behavior**
-`report_level_pipeline()` is hardcoded to produce a single report:
-log count by level. Each new report type would require a new dedicated
-function.
-
-**Why it matters**
-Month 2 introduces additional analyses — log count by service, response
-time distribution, CPU analysis. The reporting pipeline will need to
-support multiple report types without duplicating the orchestration
-logic.
-
-**Target:** Month 2 — when the second and third report types are needed,
-the pattern for generalization will be clear.
-
-**Status** [Completed]
+**Status** [Completed — Sprint 4]
 
 Renamed to `report_pipeline()`. Uses a dict collector pattern — each
 report function returns `{filename: Figure}`, the orchestrator merges
@@ -342,7 +311,7 @@ count by service, response time distribution, and correlation heatmap.
 
 ---
 
-### 🟡 Selective report execution in reporting pipeline
+### 🔵 Selective report execution in reporting pipeline
 
 **Current behavior**
 `report_pipeline()` runs all 4 reports unconditionally on every
@@ -354,8 +323,89 @@ becomes wasteful. Allowing the caller to specify which reports to
 run would make the pipeline more flexible and faster for targeted
 analysis.
 
-**Target:** Month 2–3 — when the report count grows enough that
+**Target:** Month 3–4 — when the report count grows enough that
 selective execution provides clear value.
+
+---
+
+### 🔵 Accept output path as parameter
+
+**Current behavior**
+The output directory is resolved internally using `__file__`. There
+is no way for the caller to specify an alternative output location.
+
+**Why it matters**
+Accepting the output path as a parameter would make the pipeline
+more flexible for testing and for cloud deployments where output
+goes to a different location.
+
+**Target:** Month 3–4.
+
+---
+
+### 🔵 Summary metadata file alongside plots
+
+**Current behavior**
+The reporting pipeline saves only plot files. There is no metadata
+about the report run (date, service analyzed, record count).
+
+**Why it matters**
+A small summary file alongside the plots would make report runs
+traceable and reproducible.
+
+**Target:** Month 3–4.
+
+---
+
+## Run Features Pipeline
+
+---
+
+### 🔵 Configurable output filename or path
+
+**Current behavior**
+The output filename is hardcoded as `features.csv` and the directory
+is resolved internally.
+
+**Why it matters**
+Allowing the caller to specify the filename or path would make the
+pipeline more flexible for different runs or environments.
+
+**Target:** Month 3–4.
+
+---
+
+### 🔵 Log summary of persisted dataset
+
+**Current behavior**
+The features pipeline saves the CSV silently. There is no log message
+confirming what was saved (row count, column count, file size).
+
+**Why it matters**
+A summary log would confirm the pipeline completed successfully and
+provide visibility into the dataset size without opening the file.
+
+**Target:** Month 3–4.
+
+---
+
+## Feature Engineering
+
+---
+
+### 🔵 Feature documentation describing ML relevance
+
+**Current behavior**
+Each feature has a docstring explaining what it does, but there is
+no documentation explaining why each feature matters for ML — what
+signal it captures and how a model would use it.
+
+**Why it matters**
+When Month 8 arrives and ML training begins, this documentation will
+be essential for understanding which features to keep, modify, or
+discard.
+
+**Target:** Month 3–4 — while the features are fresh in memory.
 
 ---
 
@@ -405,8 +455,7 @@ modifying the source code, making the pipeline more practical as a CLI tool.
 
 ---
 
-## Log analyzer
-
+## Log Analysis
 
 ---
 
@@ -443,3 +492,81 @@ remove lines — the edge case can surface.
 
 **Target:** Month 3 — when the pipeline handles more diverse datasets
 and edge cases become more likely.
+
+---
+
+## Log Visualizer
+
+---
+
+### 🔵 Color customization per category
+
+**Current behavior**
+All plots use seaborn default colors. There is no way to assign
+specific colors to categories (e.g. red for ERROR, yellow for WARNING).
+
+**Why it matters**
+Color-coded categories improve readability and make plots immediately
+interpretable without reading labels.
+
+**Target:** Month 3–4.
+
+---
+
+### 🔵 Annotation support for heatmap cells
+
+**Current behavior**
+The correlation heatmap displays colors but does not show the
+numeric correlation values on each cell.
+
+**Why it matters**
+Displaying values directly on the heatmap makes it easier to read
+exact correlations without relying only on color gradients.
+
+**Target:** Month 3–4.
+
+---
+
+### 🔵 Save figures with optional path parameter
+
+**Current behavior**
+Visualizer functions return Figure objects. Saving is handled by
+the reporting pipeline. There is no option to save directly from
+the visualizer.
+
+**Why it matters**
+An optional `save_path` parameter would allow standalone usage of
+the visualizer outside the pipeline context.
+
+**Target:** Month 3–4 — low priority since the pipeline pattern works.
+
+---
+
+## Docker
+
+---
+
+### 🟣 Docker Compose for local development
+
+**Current behavior**
+The pipeline runs with manual `docker build` and `docker run` commands.
+
+**Why it matters**
+Docker Compose would allow defining the full local development
+environment (volumes, environment variables, services) in a single
+file.
+
+**Target:** Month 6.
+
+---
+
+### 🟣 Cloud deployment with Docker on EC2
+
+**Current behavior**
+Docker is used only for local environment isolation.
+
+**Why it matters**
+Deploying the containerized pipeline to EC2 is a key Phase 2
+deliverable for cloud readiness.
+
+**Target:** Month 6.
