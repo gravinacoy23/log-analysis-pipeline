@@ -12,7 +12,7 @@ def main(service_name: str) -> pd.DataFrame:
     Orchestrates all the configuration needed for the data pipelines.
 
     Args:
-        service_name(str) : name of the service to run the pipeline on
+        service_name: name of the service to run the pipeline on
 
     Returns:
         Parsed logs dataframe
