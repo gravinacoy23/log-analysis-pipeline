@@ -15,11 +15,29 @@ def orchestrate_features(
     """
 
     features_list = list()
+    context_cols = ["timestamp", "service", "user"]
 
+    features_list.append(_context_cols(logs_dataframe, context_cols))
     features_list.append(_is_error(logs_dataframe))
     features_list.append(_is_slow(logs_dataframe, thresholds["high_rt"]))
 
     return pd.concat(features_list, axis=1)
+
+
+def _context_cols(
+    logs_dataframe: pd.DataFrame, cols: list[str]
+) -> pd.DataFrame | pd.Series:
+    """Retrieves some context columns for the feature engineering dataset
+
+    Args:
+        logs_dataframe: DF of parsed logs.
+        cols: context cols predefined in the orchestrator function
+
+    Returns:
+        Depending on the ammount of cols a series or a df with the context cols.
+    """
+
+    return logs_dataframe[cols]
 
 
 def _is_error(logs_dataframe: pd.DataFrame) -> pd.Series:

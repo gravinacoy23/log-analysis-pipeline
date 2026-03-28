@@ -14,7 +14,8 @@ single DataFrame.
 
 The feature engineering module sits between the analysis layer
 and the persistence layer. It receives a validated DataFrame
-and produces a new DataFrame containing only derived features.
+and produces a new DataFrame containing context columns and
+derived features.
 
 ```
 log_analysis.py → DataFrame → feature_engineering.py → Feature DataFrame → pipeline persists to CSV
@@ -46,13 +47,16 @@ src/features/feature_engineering.py
 
 ### Returns
 
-- `pd.DataFrame` — new DataFrame containing only the derived
-  feature columns, one per feature function
+- `pd.DataFrame` — new DataFrame containing context columns
+  and all derived feature columns
 
 ### Implementation Details
 
+- Defines context columns (timestamp, service, user) and
+  delegates extraction to `_context_cols()`
 - Calls each feature function independently
-- Collects returned Series into a list
+- Collects all results (context DataFrame and feature Series)
+  into a list
 - Assembles the final DataFrame using `pd.concat(features_list, axis=1)`
 - Does not modify the input DataFrame
 
@@ -74,6 +78,38 @@ src/features/feature_engineering.py
   pattern as the dict collector in `report_pipeline()` — collect
   results from individual functions, combine in a single step
   at the end.
+
+---
+
+## Function: _context_cols()
+
+### Parameters
+
+- `logs_dataframe` — pandas DataFrame with validated log data
+- `cols` — list of column names to extract as context
+
+### Returns
+
+- `pd.DataFrame` — subset of the original DataFrame containing
+  only the specified context columns
+
+### Implementation Details
+
+- Uses list-based column indexing on the DataFrame
+- Returns a DataFrame, not a Series — list indexing always
+  returns a DataFrame regardless of the number of columns
+
+### Design Decisions
+
+- **Context columns defined in the orchestrator, not hardcoded
+  in the function.** The function receives the column list as a
+  parameter, keeping it reusable. The orchestrator owns the
+  decision of which columns provide context.
+
+- **Separate function instead of inline extraction.** Extracting
+  context columns is a distinct responsibility from deriving
+  features. A dedicated function keeps the orchestrator readable
+  and follows the same pattern as the feature functions.
 
 ---
 
@@ -160,5 +196,4 @@ and extracts individual values for each feature function.
 ## Future Improvements (Planned)
 
 - Pipeline integration and CSV persistence
-- Context columns (timestamp, service, user) in final dataset
 - Feature documentation describing ML relevance per feature
