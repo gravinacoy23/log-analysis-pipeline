@@ -1,4 +1,4 @@
-# Main — Implementation (v4)
+# Main — Implementation (v5)
 
 ## Objective
 
@@ -24,7 +24,7 @@ appropriate pipelines.
 user → main.py → load_config() → config dict
               → run_pipeline.py (receives config)
               → run_reporting_pipeline.py
-              → (future pipelines receive config)
+              → run_features_pipeline.py (receives config)
 ```
 
 ---
@@ -41,8 +41,8 @@ main.py  (project root)
 
 ## `main(service_name)`
 
-Loads configuration, calls the data pipeline and the reporting
-pipeline in sequence.
+Loads configuration, calls the data pipeline, the reporting
+pipeline, and the features pipeline in sequence.
 
 **Parameters:**
 - `service_name` (str) — name of the service to analyze
@@ -106,10 +106,12 @@ If no argument is provided, the default service is `booking`.
    and DataFrame creation with computed columns
 3. `report_pipeline(logs_dataframe)` — generates all visualizations
    and saves them to `output/plots/`
+4. `run_features_pipeline(logs_dataframe, config_data)` — generates
+   derived features and saves the dataset to `output/datasets/`
 
 The config dict is passed to pipelines that need it. The DataFrame
-produced by the first pipeline is passed directly to the second.
-`main()` does not modify or inspect either.
+produced by the data pipeline is passed to both the reporting and
+features pipelines. `main()` does not modify or inspect it.
 
 ---
 
@@ -134,6 +136,18 @@ belongs in the pipeline layer, not in the entry point.
 ## argparse over hardcoded values
 The service name is passed as a CLI argument rather than hardcoded.
 This makes the pipeline reusable without modifying source code.
+
+---
+
+# Changes from v4
+
+- Added `run_features_pipeline(logs_dataframe, config_data)` as
+  third pipeline call — generates feature dataset and persists
+  to `output/datasets/features.csv`
+- Imports `run_features_pipeline` from
+  `pipelines.run_features_pipeline`
+- System context and pipeline coordination updated to reflect
+  three pipelines
 
 ---
 
