@@ -6,7 +6,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def parse_logs(logs: Iterator[str], expected_cols: list[str]) -> list[dict[str, Any]]:
+def parse_logs(
+    logs: Iterator[str], expected_cols: list[str]
+) -> tuple[list[dict[str, Any]], dict[str, int | float] | dict[str, int]]:
     """Parses the raw logs received from the reader in an understandable format for pandas.
 
     Args:
@@ -14,10 +16,11 @@ def parse_logs(logs: Iterator[str], expected_cols: list[str]) -> list[dict[str, 
         expected_cols: from the config file, all the expected_cols.
 
     Returns:
-        All the logs in an easy format to be processed by Pandas in the analysis layer.
+        All the logs in an easy format to be processed by Pandas in the analysis layer, and three stats of lines skipped and processed.
     """
 
     log_dict_list = list()
+    skipped_lines = 0
 
     for line_number, log in enumerate(logs, start=1):
         before_message, _, message = log.partition(" msg=")
@@ -26,19 +29,26 @@ def parse_logs(logs: Iterator[str], expected_cols: list[str]) -> list[dict[str, 
 
         if not parsed_message:
             logger.warning(f"Missing message at line {line_number}")
+            skipped_lines += 1
             continue
 
         log_dict = _parse_fields(metrics, line_number)
 
-        if log_dict is not None:
-            log_dict["msg"] = parsed_message
+        if log_dict is None:
+            skipped_lines += 1
+            continue
 
-            if not _verify_columns(log_dict, expected_cols, line_number):
-                continue
+        log_dict["msg"] = parsed_message
 
-            log_dict_list.append(log_dict)
+        if not _verify_columns(log_dict, expected_cols, line_number):
+            skipped_lines += 1
+            continue
 
-    return log_dict_list
+        log_dict_list.append(log_dict)
+
+    log_stats = _skip_report(skipped_lines, len(log_dict_list))
+
+    return log_dict_list, log_stats
 
 
 def _parse_fields(
@@ -98,3 +108,32 @@ def _verify_columns(
             return False
 
     return True
+
+
+def _skip_report(
+    skipped_lines: int, lines_processed: int
+) -> dict[str, int | float] | dict[str, int]:
+    """Build and log a report of the processed and skipped lines.
+    Args:
+        skipped_lines: counter number of skipped lines
+        lines_processed: num of lines processed.
+
+    Returns:
+        mapped stats.
+    """
+
+    log_stats: dict[str, int | float] = {
+        "lines_processed": lines_processed,
+        "skipped_lines": skipped_lines,
+    }
+
+    if skipped_lines == 0 and lines_processed == 0:
+        logger.warning("Log file is empty")
+        return log_stats
+
+    log_stats["skip_rate"] = (skipped_lines / (skipped_lines + lines_processed)) * 100
+
+    for metric, value in log_stats.items():
+        logger.info(f"{metric}: {value}")
+
+    return log_stats

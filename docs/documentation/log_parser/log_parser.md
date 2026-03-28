@@ -1,4 +1,4 @@
-# Log Parser — Implementation (v3)
+# Log Parser — Implementation (v4)
 
 ## Objective
 
@@ -12,6 +12,7 @@ The goal of this phase is to:
 - Validate that all expected fields are present per line
 - Reject lines with empty values
 - Handle malformed lines gracefully without crashing the pipeline
+- Track and report parsing statistics (lines processed, skipped, skip rate)
 - Prepare structured data for the pandas layer
 
 ---
@@ -43,14 +44,19 @@ src/processing/log_parser.py
 
 ## `parse_logs(logs, expected_cols)`
 
-Parses a list of raw log strings into a list of dictionaries.
+Parses a list of raw log strings into a list of dictionaries and
+returns parsing statistics alongside the result.
 
 **Parameters:**
 - `logs` (Iterator[str]) — iterator of raw log lines as returned by `log_reader.py`
 - `expected_cols` (list[str]) — list of required column names loaded from config
 
 **Returns:**
-- List of dicts — one dictionary per valid log line
+- `tuple[list[dict[str, Any]], dict[str, int | float] | dict[str, int]]`
+  — a tuple containing:
+  - List of dicts — one dictionary per valid log line
+  - Dict of parsing statistics — lines_processed, skipped_lines,
+    and skip_rate (skip_rate omitted when input is empty)
 
 **Behavior:**
 - Malformed lines are skipped and logged as warnings
@@ -58,6 +64,8 @@ Parses a list of raw log strings into a list of dictionaries.
 - Lines with empty messages are skipped and logged as warnings
 - Lines missing expected columns are skipped and logged as warnings
 - Valid lines with all expected fields are always included
+- Parsing statistics are logged at INFO level at the end of parsing
+- Empty input (0 lines processed, 0 skipped) is logged as a WARNING
 
 ---
 
@@ -76,19 +84,39 @@ field that may contain spaces inside quoted values.
 
 # Implementation Details
 
-## Three-Function Design
+## Four-Function Design
 
-The parser is split into three functions with distinct responsibilities:
+The parser is split into four functions with distinct responsibilities:
 
 - `parse_logs(logs, expected_cols)` — orchestrates iteration over all
-  lines, validates messages, and validates column completeness
+  lines, validates messages, validates column completeness, tracks
+  skipped lines, and delegates statistics reporting
 - `_parse_fields(fields, line_number)` — parses a single line's
   key=value fields, rejects malformed or empty values (private)
 - `_verify_columns(logs_dict, expected_cols, line_number)` — validates
   that all expected columns are present in a parsed dict (private)
+- `_skip_report(skipped_lines, lines_processed)` — builds and logs
+  parsing statistics (private)
 
 This separation keeps each function focused on one concern: parsing,
-field validation, and column completeness.
+field validation, column completeness, and statistics reporting.
+
+## Skipped Line Tracking
+
+A `skipped_lines` counter is incremented at each point where a line
+is rejected in `parse_logs`:
+
+- Missing or empty message → `skipped_lines += 1`
+- `_parse_fields` returns `None` → `skipped_lines += 1`
+- `_verify_columns` returns `False` → `skipped_lines += 1`
+
+All three rejection points live in `parse_logs`, so the counter is
+maintained in a single function without needing auxiliary functions
+to modify an external variable.
+
+The number of successfully processed lines is derived from
+`len(log_dict_list)` after the loop — O(1) operation on a Python
+list, no counter needed.
 
 ## Message Field Isolation
 
@@ -160,6 +188,7 @@ the config is present in the resulting dictionary.
 
 ```python
 if not _verify_columns(log_dict, expected_cols, line_number):
+    skipped_lines += 1
     continue
 ```
 
@@ -194,16 +223,69 @@ that warning messages reference the correct line.
 Each line goes through three levels of validation before being accepted:
 
 ```
-1. Message present?          → No  → skip, log warning
-2. Fields parseable?         → No  → skip, log warning (malformed or empty value)
-3. All expected cols present? → No  → skip, log warning
+1. Message present?          → No  → skip, log warning, increment counter
+2. Fields parseable?         → No  → skip, log warning, increment counter
+3. All expected cols present? → No  → skip, log warning, increment counter
 4. All passed               → append to result list
+```
+
+After the loop completes:
+
+```
+5. _skip_report(skipped_lines, len(log_dict_list)) → log stats, return stats dict
 ```
 
 Each level catches a different class of problem:
 - Level 1: missing or malformed `msg` field
 - Level 2: fields that cannot be split (`key=value`) or have empty values (`key=`)
 - Level 3: syntactically valid lines with missing fields
+
+---
+
+# Function: _skip_report()
+
+## Parameters
+
+- `skipped_lines` — integer count of lines rejected during parsing
+- `lines_processed` — integer count of lines successfully parsed
+
+## Returns
+
+- `dict[str, int | float] | dict[str, int]` — dict containing
+  `lines_processed`, `skipped_lines`, and `skip_rate` (percentage).
+  When both values are 0 (empty input), `skip_rate` is omitted to
+  avoid division by zero.
+
+## Implementation Details
+
+- Builds the stats dict with lines_processed and skipped_lines
+- If both are 0, logs a WARNING about empty input and returns
+  the dict without skip_rate
+- Otherwise calculates skip_rate as a percentage:
+  `(skipped / (skipped + processed)) * 100`
+- Iterates over the stats dict and logs each metric at INFO level
+
+## Design Decisions
+
+- **Separate function for statistics.** The main parsing loop tracks
+  the raw counter. Building the report, calculating the rate, and
+  logging are a distinct responsibility — delegated to `_skip_report`.
+
+- **Logs at INFO level, not WARNING.** Parsing statistics are
+  informational — they report what happened, not what went wrong.
+  Individual skipped lines are already logged as warnings. The
+  empty input case is logged as WARNING because it signals a
+  potential problem upstream.
+
+- **Skip rate calculated in the parser, not downstream.** The skip
+  rate is a direct metric of parsing quality. The parser has the
+  raw data to compute it, and it is logged alongside the other
+  stats for immediate visibility.
+
+- **Division by zero handled via early return.** When both counters
+  are 0, the function returns early with only the two counters.
+  This avoids a conditional inside the calculation and keeps the
+  happy path clean.
 
 ---
 
@@ -217,7 +299,7 @@ A line is considered malformed if any field cannot be split into a
 When a malformed line is detected:
 - A `WARNING` is logged identifying the line number
 - `_parse_fields` returns `None`
-- `parse_logs` skips the line and continues processing
+- `parse_logs` increments the skip counter and continues processing
 
 ## Empty Values
 
@@ -253,6 +335,13 @@ full line as the first element unchanged. The malformed `msg"Seat booked"`
 token then reaches `_parse_fields` as a field without a valid `=`
 separator, triggering the same guard clause as any other malformed field.
 
+## Empty Input
+
+When the iterator produces no lines (empty log file), both counters
+remain at 0. `_skip_report` detects this and logs a warning. The
+empty list is returned to the caller, where the analysis layer's
+`_verify_columns` will raise a `ValueError` for an empty list.
+
 ## Logging
 
 Uses Python's standard `logging` module. A module-level logger is
@@ -263,7 +352,8 @@ logger = logging.getLogger(__name__)
 ```
 
 Logger configuration (handlers, format, level) is the responsibility
-of the entry point (`main.py`), not this module.
+of the entry point (`main.py`), not this module. The logging level
+in `main.py` is set to `INFO` to surface parsing statistics.
 
 ---
 
@@ -288,7 +378,7 @@ assignment logic. Mixing them would conflate two different concerns.
 
 ## `None` as sentinel value
 `_parse_fields` returns `None` for malformed lines. This allows
-`parse_logs` to use a simple `if log_dict is not None` check to decide
+`parse_logs` to use a simple `if log_dict is None` check to decide
 whether to proceed with column validation.
 
 ## `_verify_columns` returns bool, not None
@@ -311,9 +401,9 @@ lines are rejected and the list arrives empty. Each layer validates
 at its own level.
 
 ## Private function convention
-`_parse_fields` and `_verify_columns` are prefixed with `_` to signal
-they are internal implementation details, not part of the public
-interface of the module.
+`_parse_fields`, `_verify_columns`, and `_skip_report` are prefixed
+with `_` to signal they are internal implementation details, not part
+of the public interface of the module.
 
 ## No hardcoded field names in type detection
 Type detection does not rely on a list of numeric field names. Instead,
@@ -322,26 +412,37 @@ resilient to minor format changes without requiring updates to a field
 registry.
 
 ## Logging over print
-`logger.warning()` is used instead of `print()` for all validation
-reporting. Functions should not have console side effects, and logging
-gives the application control over how and where messages are handled.
+`logger.warning()` and `logger.info()` are used instead of `print()`
+for all validation and statistics reporting. Functions should not have
+console side effects, and logging gives the application control over
+how and where messages are handled.
+
+## Tuple return for data + metadata
+`parse_logs` returns a tuple of `(parsed_logs, stats_dict)`. This is
+appropriate because the function always returns exactly two things of
+different nature — the data and metadata about the data. The stats
+dict can grow internally (new metrics) without changing the tuple
+structure. This avoids the fragility of positional tuples with many
+elements (as seen in the generator's original config return).
 
 ---
 
-# Changes from v2
+# Changes from v3
 
-- `parse_logs` now receives `expected_cols` parameter — list of
-  required column names loaded from config by the pipeline orchestrator
-- Added empty value guard clause in `_parse_fields` — rejects fields
-  where the value after `=` is an empty string (e.g. `cpu=`)
-- Added empty message validation in `parse_logs` — lines with missing
-  or empty messages are skipped before field parsing begins
-- Added `_verify_columns()` — validates that each parsed dict contains
-  all expected columns before appending to the result list
-- "Validate that all expected fields are present" removed from Future
-  Improvements — resolved
-- Design doc restructured to include Validation Flow section showing
-  the three levels of validation each line passes through
+- `parse_logs` now returns a tuple: `(list[dict], stats_dict)` —
+  parsed logs and parsing statistics returned together
+- Added `skipped_lines` counter in `parse_logs` — incremented at
+  each rejection point (missing message, failed parse, missing columns)
+- Lines processed count derived from `len(log_dict_list)` after
+  the loop — O(1) on Python lists
+- Added `_skip_report()` — builds stats dict, calculates skip rate,
+  logs statistics at INFO level
+- Empty input handled: when both counters are 0, logs WARNING and
+  returns stats without skip_rate to avoid division by zero
+- Logging level in `main.py` changed from WARNING to INFO to surface
+  parsing statistics
+- "Return parsing statistics" removed from Future Improvements —
+  resolved
 
 ---
 
@@ -352,6 +453,7 @@ gives the application control over how and where messages are handled.
   standard library.
 - ~~Validate that all expected fields are present before accepting a
   line~~ — resolved with `_verify_columns()` and empty value guard.
+- ~~Return parsing statistics (lines processed, lines skipped)~~ —
+  resolved with tuple return and `_skip_report()`.
 - Support configurable field type mappings from `config.yaml`
-- Return parsing statistics (lines processed, lines skipped)
 - Support for additional log formats
