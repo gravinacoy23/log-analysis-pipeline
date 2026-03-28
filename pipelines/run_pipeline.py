@@ -24,7 +24,7 @@ def run_pipeline(service: str, raw_data: dict[str, Any]) -> pd.DataFrame:
         "level": raw_data["level"],
     }
 
-    parsed_logs = parse_logs(raw_logs, list(expected_columns.keys()))
+    parsed_logs, parse_stats = parse_logs(raw_logs, list(expected_columns.keys()))
     logs_dataframe = convert_to_dataframe(
         parsed_logs, expected_columns, expected_values
     )

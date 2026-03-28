@@ -1,4 +1,4 @@
-# Run Pipeline — Implementation (v6)
+# Run Pipeline — Implementation (v7)
 
 ## Objective
 
@@ -63,7 +63,7 @@ for a given service.
 3. build expected_values from raw_data["service"] and
    raw_data["level"]                                        → dict[str, list[str]]
 4. load_service_logs(service)                               → iterator of raw strings
-5. parse_logs(raw_logs, column_names)                       → list of parsed dicts
+5. parse_logs(raw_logs, column_names)                       → (list of parsed dicts, stats dict)
 6. convert_to_dataframe(parsed_logs, expected_columns,
    expected_values)                                         → fully validated DataFrame
 7. get_metric_thresholds(df, "cpu", thresholds)             → mutates DataFrame
@@ -74,7 +74,10 @@ The config is received from `main.py` as a parameter. The pipeline
 extracts and adapts config values for each stage:
 
 - **Parser** receives `list[str]` of column names — for field
-  presence validation per line
+  presence validation per line. Returns a tuple: the parsed logs
+  and a stats dict with lines_processed, skipped_lines, and
+  skip_rate. The pipeline unpacks both; `parse_stats` is available
+  for future use.
 - **Analysis layer** receives two config-derived structures:
   - `expected_columns` (`dict[str, str]`) — column names mapped to
     types, used for column presence and dtype validation
@@ -145,6 +148,15 @@ or a feature pipeline — each with its own file and clear responsibility.
 
 ---
 
+# Changes from v6
+
+- `parse_logs` return value unpacked as tuple:
+  `parsed_logs, parse_stats = parse_logs(...)` — stats dict
+  available for future pipeline metadata reporting
+- Pipeline flow updated to reflect tuple return from parser
+
+---
+
 # Changes from v5
 
 - `load_config()` removed — config is now received as `raw_data`
@@ -160,4 +172,6 @@ or a feature pipeline — each with its own file and clear responsibility.
 # Future Improvements (Planned)
 
 - Accept a list of services and run the pipeline for each
-- Return pipeline metadata alongside results (lines processed, lines skipped)
+- Surface parse_stats to the caller or to logs — the stats are
+  available but not yet used by the pipeline beyond logging in
+  the parser
