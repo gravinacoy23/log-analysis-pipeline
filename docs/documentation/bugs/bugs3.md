@@ -121,6 +121,10 @@ that the stats dict contains `lines_processed`, `skipped_lines`, and
 **What to do:**
 Update the return description to explicitly name the three stats.
 
+**Status** [Completed]
+
+Corrected doc string
+
 ---
 
 ### #26 — `run_pipeline.py`: Extra blank line in docstring

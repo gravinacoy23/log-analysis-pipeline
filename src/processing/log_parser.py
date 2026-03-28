@@ -16,7 +16,7 @@ def parse_logs(
         expected_cols: from the config file, all the expected_cols.
 
     Returns:
-        All the logs in an easy format to be processed by Pandas in the analysis layer, and three stats of lines skipped and processed.
+        All the logs in an easy format to be processed by Pandas in the analysis layer, and three stats: lines processed, lines skipped and skip rate.
     """
 
     log_dict_list = list()
