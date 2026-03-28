@@ -40,9 +40,9 @@ would silently produce incorrect results.
 Consider whether this should come from the config or if the current
 approach is acceptable given that these column names are stable.
 
-**Status** [Under review]
+**Status** [Not needed]
 
-This columns will always be the same, will discuss with scrum master
+These cols are fixed as a context
 
 ---
 
