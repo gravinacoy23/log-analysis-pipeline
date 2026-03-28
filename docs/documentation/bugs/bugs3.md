@@ -40,6 +40,10 @@ would silently produce incorrect results.
 Consider whether this should come from the config or if the current
 approach is acceptable given that these column names are stable.
 
+**Status** [Under review]
+
+This columns will always be the same, will discuss with scrum master
+
 ---
 
 ### #23 — `feature_engineering.py`: Missing `__init__.py` in `src/features/`
@@ -58,6 +62,10 @@ consistency.
 **What to do:**
 Verify the directory has an `__init__.py`. If not, create an empty one.
 Also verify the other `src/` subdirectories have one.
+
+**Status** [Completed]
+
+Added the missing init file, all other modules have one.
 
 ---
 
