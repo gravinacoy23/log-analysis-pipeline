@@ -261,7 +261,7 @@ def _generator_loop(
     iterations: int, raw_data: dict[str, Any], file_handles: dict[str, TextIOWrapper]
 ) -> None:
     """Generates all the log lines for a given number of times and calls the
-    corresponding auxiliary functions to genrerate format and write the log.
+    corresponding auxiliary functions to generate format and write the log.
 
     Args:
         iterations: Number of logs to be generated.

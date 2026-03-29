@@ -37,7 +37,7 @@ def _context_cols(logs_dataframe: pd.DataFrame, cols: list[str]) -> pd.Series:
         cols: context cols predefined in the orchestrator function
 
     Returns:
-        Depending on the ammount of cols a series or a df with the context cols.
+        Depending on the amount of cols a series or a df with the context cols.
     """
 
     return logs_dataframe[cols]  # type: ignore

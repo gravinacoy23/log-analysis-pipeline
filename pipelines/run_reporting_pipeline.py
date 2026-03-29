@@ -48,7 +48,7 @@ def _make_output_directory() -> Path:
 
 
 def _count_report(logs_dataframe: pd.DataFrame, metric_name: str) -> dict[str, Figure]:
-    """Sub report to create a plot that counts the occurences of a given
+    """Sub report to create a plot that counts the occurrences of a given
     metric.
 
     Args:

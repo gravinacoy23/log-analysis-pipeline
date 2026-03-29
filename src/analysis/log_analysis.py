@@ -125,7 +125,7 @@ def _verify_col_dtype(
 def _verify_col_values(
     log_line: dict[str, Any], expected_values: dict[str, list[str]], line_number: int
 ) -> bool:
-    """Verifies that the given columns had the corresponding expectyed values.
+    """Verifies that the given columns had the corresponding expected values.
 
     Args:
         log_line: Dictionary containing 1 log line from the dataset.
@@ -191,7 +191,7 @@ def select_col(
 
 
 def count_by_level(logs_dataframe: pd.DataFrame, level: str) -> int:
-    """Counts the the occurrences of a given log level in the dataframe.
+    """Counts the occurrences of a given log level in the dataframe.
 
     Args:
         logs_dataframe: DF of parsed logs
@@ -211,7 +211,7 @@ def count_by_level_all(logs_dataframe: pd.DataFrame) -> pd.Series:
         logs_dataframe: DF of parsed logs
 
     Returns:
-        A series with the occurences per level.
+        A series with the occurrences per level.
     """
 
     return logs_dataframe.value_counts("level")
@@ -225,7 +225,7 @@ def count_by_service(logs_dataframe: pd.DataFrame, service: str) -> int:
         service: Name of the service
 
     Returns:
-        Occurences if the given service in the DF
+        Occurrences if the given service in the DF
     """
 
     return (logs_dataframe["service"] == service).sum()
@@ -238,7 +238,7 @@ def count_by_service_all(logs_dataframe: pd.DataFrame) -> pd.Series:
         logs_dataframe: DF of parsed logs.
 
     Returns:
-        Series with the number of occurences
+        Series with the number of occurrences
     """
 
     return logs_dataframe.value_counts("service")
@@ -281,7 +281,7 @@ def get_metric_thresholds(
     Args:
         logs_dataframe: DF of parsed logs.
         metric: name of the metric
-        thresholds: To clasify the logs per metric
+        thresholds: To classify the logs per metric
     """
 
     metric_thresholds = dict(thresholds[metric])
