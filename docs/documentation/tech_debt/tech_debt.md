@@ -137,13 +137,32 @@ resolution explicit and portable across environments.
 
 ### 🟡 Read all log files for a service instead of just the first one
 
-**Status** [Completed — Sprint 3]
+**Current behavior**
+The reader selects only the first file it finds in the service directory.
+
+**Why it matters**
+Analysis is currently limited to a single log file regardless of how many exist.
+For meaningful analysis, the reader should aggregate all available files for a
+service into a single list of log lines.
+
+**Target:** Month 1 (Week 3–4) — required before analysis results become statistically meaningful.
+
+**Status** [Completed]
 
 ---
 
 ### 🟡 Read logs across all services and return a consolidated result
 
-**Status** [Completed — Sprint 3]
+**Current behavior**
+The reader requires a specific service name and returns logs for that service only.
+
+**Why it matters**
+Supporting multi-service reads would allow the pipeline to analyze the full system —
+for example, detecting correlations between shopping and booking load patterns.
+
+**Target:** Month 2 — when cross-service analysis becomes part of the work.
+
+**Status** [Completed]
 
 ---
 
@@ -257,11 +276,25 @@ services and return consolidated results.
 
 ### 🟡 Read all log files for a service, not just the first
 
+**Current behavior**
+The orchestrator instructs the reader to return only the first log file found.
+
+**Why it matters**
+This is the pipeline-level counterpart of the reader improvement above.
+The orchestrator should support aggregating all files for a service.
+
 **Status** [Completed — Sprint 3]
 
 ---
 
 ### 🟡 Return pipeline metadata alongside the parsed result
+
+**Current behavior**
+`run_pipeline` returns only the list of parsed log dicts with no additional context.
+
+**Why it matters**
+Adding metadata such as lines processed, lines skipped, and execution time would
+improve observability and make the pipeline easier to monitor and debug.
 
 **Status** [Partially completed — Sprint 5]
 
