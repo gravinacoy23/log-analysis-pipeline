@@ -12,8 +12,7 @@ def convert_to_dataframe(
     expected_columns: dict[str, str],
     expected_values: dict[str, list[str]],
 ) -> pd.DataFrame:
-    """
-    Converts the list of parsed logs into a dataframe.
+    """Converts the list of parsed logs into a dataframe.
 
     Args:
         log_dicts: Parsed logs.
@@ -38,8 +37,7 @@ def _validation_orchestrator(
     expected_columns: dict[str, str],
     expected_values: dict[str, list[str]],
 ) -> list[dict[str, Any]]:
-    """
-    Orchestrates the validation of the log dicts before converting to
+    """Orchestrates the validation of the log dicts before converting to
     Dataframe.
 
     Args:
@@ -77,8 +75,7 @@ def _validation_orchestrator(
 def _verify_columns(
     log_dicts: list[dict[str, Any]], expected_columns: KeysView[str]
 ) -> None:
-    """
-    Verifies that the parsed logs are not empty and contain the required
+    """Verifies that the parsed logs are not empty and contain the required
     columns.
 
     Args:
@@ -103,9 +100,8 @@ def _verify_columns(
 def _verify_col_dtype(
     log_line: dict[str, Any], expected_dtypes: list[str], line_number: int
 ) -> bool:
-    """
-    Verify all the cols have the correct data type, for now only verifies INT
-    dtype cols.
+    """Verify all the cols have the correct data type, for now only verifies
+    INT dtype cols.
 
     Args:
         log_line: Dictionary containing 1 log line from the dataset
@@ -129,8 +125,7 @@ def _verify_col_dtype(
 def _verify_col_values(
     log_line: dict[str, Any], expected_values: dict[str, list[str]], line_number: int
 ) -> bool:
-    """
-    Verifies that the given columns had the corresponding expectyed values.
+    """Verifies that the given columns had the corresponding expectyed values.
 
     Args:
         log_line: Dictionary containing 1 log line from the dataset.
@@ -152,8 +147,7 @@ def _verify_col_values(
 
 
 def convert_corr_matrix(logs_dataframe: pd.DataFrame) -> pd.DataFrame:
-    """
-    Converts the numeric type cols to a correlation matrix.
+    """Converts the numeric type cols to a correlation matrix.
 
     Args:
         logs_dataframe: DF of parsed logs.
@@ -167,8 +161,7 @@ def convert_corr_matrix(logs_dataframe: pd.DataFrame) -> pd.DataFrame:
 
 
 def filter_loglevel(logs_dataframe: pd.DataFrame, level: str) -> pd.DataFrame:
-    """
-    Filters all the logs that match the input level.
+    """Filters all the logs that match the input level.
 
     Args:
         logs_dataframe: DF of parsed logs.
@@ -184,8 +177,7 @@ def filter_loglevel(logs_dataframe: pd.DataFrame, level: str) -> pd.DataFrame:
 def select_col(
     logs_dataframe: pd.DataFrame, column_name: str
 ) -> pd.DataFrame | pd.Series:
-    """
-    Selects the required column by name.
+    """Selects the required column by name.
 
     Args:
         logs_dataframe: DF of parsed logs.
@@ -199,8 +191,7 @@ def select_col(
 
 
 def count_by_level(logs_dataframe: pd.DataFrame, level: str) -> int:
-    """
-    Counts the the occurrences of a given log level in the dataframe.
+    """Counts the the occurrences of a given log level in the dataframe.
 
     Args:
         logs_dataframe: DF of parsed logs
@@ -214,8 +205,7 @@ def count_by_level(logs_dataframe: pd.DataFrame, level: str) -> int:
 
 
 def count_by_level_all(logs_dataframe: pd.DataFrame) -> pd.Series:
-    """
-    Counts the occurrences per level in all the DataFrame.
+    """Counts the occurrences per level in all the DataFrame.
 
     Args:
         logs_dataframe: DF of parsed logs
@@ -228,8 +218,7 @@ def count_by_level_all(logs_dataframe: pd.DataFrame) -> pd.Series:
 
 
 def count_by_service(logs_dataframe: pd.DataFrame, service: str) -> int:
-    """
-    Counts the occurrences of a given service.
+    """Counts the occurrences of a given service.
 
     Args:
         logs_dataframe: DF of parsed logs
@@ -243,8 +232,7 @@ def count_by_service(logs_dataframe: pd.DataFrame, service: str) -> int:
 
 
 def count_by_service_all(logs_dataframe: pd.DataFrame) -> pd.Series:
-    """
-    Counts the number of occurrences of all the services in the DF.
+    """Counts the number of occurrences of all the services in the DF.
 
     Args:
         logs_dataframe: DF of parsed logs.
@@ -257,8 +245,7 @@ def count_by_service_all(logs_dataframe: pd.DataFrame) -> pd.Series:
 
 
 def mean_rt_by_service(logs_dataframe: pd.DataFrame) -> pd.Series:
-    """
-    Calculates the mean response time by service.
+    """Calculates the mean response time by service.
 
     Args:
         logs_dataframe: DF of parsed logs.
@@ -271,8 +258,7 @@ def mean_rt_by_service(logs_dataframe: pd.DataFrame) -> pd.Series:
 
 
 def mean_cpu_by_level(logs_dataframe: pd.DataFrame) -> pd.Series:
-    """
-    Calculates the mean CPU usage by level.
+    """Calculates the mean CPU usage by level.
 
     Args:
         logs_dataframe: DF of parsed logs.
@@ -289,8 +275,7 @@ def get_metric_thresholds(
     metric: str,
     thresholds: dict[str, dict[str, list[int]]],
 ) -> None:
-    """
-    Adds a column that based on predefined thresholds assigns a value of the
+    """Adds a column that based on predefined thresholds assigns a value of the
     status of the given metric.
 
     Args:

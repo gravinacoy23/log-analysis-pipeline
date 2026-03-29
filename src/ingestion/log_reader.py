@@ -3,8 +3,7 @@ from collections.abc import Iterator
 
 
 def load_service_logs(service: str) -> Iterator[str]:
-    """
-    Loads the service logs in a raw format for the parser.
+    """Loads the service logs in a raw format for the parser.
 
     Args:
         service: Name of the service you want to read/load the logs from.
@@ -36,8 +35,7 @@ def load_service_logs(service: str) -> Iterator[str]:
 
 
 def load_all_logs(services: list[str]) -> Iterator[str]:
-    """
-    Loads the all the logs in the services dirs.
+    """Loads the all the logs in the services dirs.
 
     Args:
         services: Names of all the services.
@@ -54,8 +52,7 @@ def load_all_logs(services: list[str]) -> Iterator[str]:
 
 
 def _load_all_path_names(services: list[str]) -> list[Path]:
-    """
-    Loads all the service paths.
+    """Loads all the service paths.
 
     Args:
         services: Names of all the services
@@ -74,8 +71,7 @@ def _load_all_path_names(services: list[str]) -> list[Path]:
 
 
 def _load_all_files(paths: list[Path]) -> list[Path]:
-    """
-    Loads all file names.
+    """Loads all file names.
 
     Args:
         paths: all the path names.

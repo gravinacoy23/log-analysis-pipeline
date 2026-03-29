@@ -4,8 +4,7 @@ import pandas as pd
 def orchestrate_features(
     logs_dataframe: pd.DataFrame, thresholds: dict[str, int], services: list[str]
 ) -> pd.DataFrame:
-    """
-    Orchestrates the different auxiliary functions to generate the feature
+    """Orchestrates the different auxiliary functions to generate the feature
     engineering dataset.
 
     Args:
@@ -31,8 +30,7 @@ def orchestrate_features(
 
 
 def _context_cols(logs_dataframe: pd.DataFrame, cols: list[str]) -> pd.Series:
-    """
-    Retrieves some context columns for the feature engineering dataset.
+    """Retrieves some context columns for the feature engineering dataset.
 
     Args:
         logs_dataframe: DF of parsed logs.
@@ -46,8 +44,7 @@ def _context_cols(logs_dataframe: pd.DataFrame, cols: list[str]) -> pd.Series:
 
 
 def _is_error(logs_dataframe: pd.DataFrame) -> pd.Series:
-    """
-    Creates a series of bool values whether the level of the row is ERROR.
+    """Creates a series of bool values whether the level of the row is ERROR.
 
     Args:
         logs_dataframe: DF of parsed logs.
@@ -59,8 +56,7 @@ def _is_error(logs_dataframe: pd.DataFrame) -> pd.Series:
 
 
 def _is_slow(logs_dataframe: pd.DataFrame, rt_threshold: int) -> pd.Series:
-    """
-    Creates a series of bool values whether the rt is high, depending on the
+    """Creates a series of bool values whether the rt is high, depending on the
     predefined threshold.
 
     Args:
@@ -75,8 +71,7 @@ def _is_slow(logs_dataframe: pd.DataFrame, rt_threshold: int) -> pd.Series:
 
 
 def _hour_of_day(logs_dataframe: pd.DataFrame) -> pd.Series:
-    """
-    Extracts the hr of the day in which the transaction happened.
+    """Extracts the hr of the day in which the transaction happened.
 
     Args:
         logs_dataframe: DF of parser logs
@@ -89,8 +84,7 @@ def _hour_of_day(logs_dataframe: pd.DataFrame) -> pd.Series:
 
 
 def _service_encoded(logs_dataframe: pd.DataFrame, services: list[str]) -> pd.Series:
-    """
-    Encodes the name of the service so it's easier to process down the line.
+    """Encodes the name of the service so it's easier to process down the line.
 
     Args:
         logs_dataframe: DF of parsed logs.
@@ -109,8 +103,7 @@ def _service_encoded(logs_dataframe: pd.DataFrame, services: list[str]) -> pd.Se
 
 
 def _cpu_mem_ratio(logs_dataframe: pd.DataFrame) -> pd.Series:
-    """
-    Calculates de ratio of CPU to memory.
+    """Calculates de ratio of CPU to memory.
 
     Args:
         logs_dataframe: DF of parsed logs.

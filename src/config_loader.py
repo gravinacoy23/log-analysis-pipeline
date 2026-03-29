@@ -4,8 +4,7 @@ import yaml
 
 
 def load_config() -> dict[str, Any]:
-    """
-    Loads all the config in the config.yaml.
+    """Loads all the config in the config.yaml.
 
     Returns:
         All the config loaded in a dict

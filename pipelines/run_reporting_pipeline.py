@@ -11,8 +11,7 @@ from matplotlib.figure import Figure
 
 
 def report_pipeline(logs_dataframe: pd.DataFrame) -> None:
-    """
-    Run the pipeline to generate reports and visualizations and save them to
+    """Run the pipeline to generate reports and visualizations and save them to
     the output dir.
 
     Args:
@@ -35,8 +34,7 @@ def report_pipeline(logs_dataframe: pd.DataFrame) -> None:
 
 
 def _make_output_directory() -> Path:
-    """
-    Makes the directory to save the outputs.
+    """Makes the directory to save the outputs.
 
     Returns:
         Path object with the directory.
@@ -50,8 +48,8 @@ def _make_output_directory() -> Path:
 
 
 def _count_report(logs_dataframe: pd.DataFrame, metric_name: str) -> dict[str, Figure]:
-    """
-    Sub report to create a plot that counts the occurences of a given metric.
+    """Sub report to create a plot that counts the occurences of a given
+    metric.
 
     Args:
         logs_dataframe: DF of parsed logs
@@ -68,8 +66,7 @@ def _count_report(logs_dataframe: pd.DataFrame, metric_name: str) -> dict[str, F
 
 
 def _corr_report(logs_dataframe: pd.DataFrame) -> dict[str, Figure]:
-    """
-    Sub report to create a plot that correlates all the numeric columns.
+    """Sub report to create a plot that correlates all the numeric columns.
 
     Args:
         logs_dataframe: DF of parsed logs
@@ -85,8 +82,7 @@ def _corr_report(logs_dataframe: pd.DataFrame) -> dict[str, Figure]:
 
 
 def _dist_report(logs_dataframe: pd.DataFrame, metric_name: str) -> dict[str, Figure]:
-    """
-    Sub report to create a plot that distributes a given metric.
+    """Sub report to create a plot that distributes a given metric.
 
     Args:
         logs_dataframe: DF of parsed logs

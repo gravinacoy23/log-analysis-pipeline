@@ -8,8 +8,7 @@ from pipelines.run_features_pipeline import run_features_pipeline
 
 
 def main(service_name: str) -> pd.DataFrame:
-    """
-    Orchestrates all the configuration needed for the data pipelines.
+    """Orchestrates all the configuration needed for the data pipelines.
 
     Args:
         service_name: name of the service to run the pipeline on

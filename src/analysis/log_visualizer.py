@@ -5,8 +5,7 @@ import pandas as pd
 
 
 def plot_count_metric(logs_dataframe: pd.DataFrame, metric: str) -> Figure:
-    """
-    Plots the count per metric.
+    """Plots the count per metric.
 
     Args:
         logs_dataframe: DF of logs
@@ -26,8 +25,7 @@ def plot_count_metric(logs_dataframe: pd.DataFrame, metric: str) -> Figure:
 
 
 def plot_correlation(corr_matrix: pd.DataFrame) -> Figure:
-    """
-    Plots the correlation of a given corr matrix.
+    """Plots the correlation of a given corr matrix.
 
     Args:
         corr_matrix: Matrix with the correlation values between all the numeric cols.
@@ -44,8 +42,7 @@ def plot_correlation(corr_matrix: pd.DataFrame) -> Figure:
 
 
 def plot_distribution(logs_dataframe: pd.DataFrame, column_name: str) -> Figure:
-    """
-    Plots the distribution of numeric data types.
+    """Plots the distribution of numeric data types.
 
     Args:
         logs_dataframe: DF of parsed logs
