@@ -134,22 +134,39 @@ docker build -t log-pipeline .
 ## Run the pipeline
 
 ```bash
-docker run -v $(pwd)/output:/log-analysis-pipeline/output log_analysis:latest
+docker run -v $(pwd)/output:/log-analysis-pipeline/output --user $(id -u):$(id -g) log-pipeline
 ```
 
 ## Run with a different service
 
 ```bash
-docker run log-pipeline python main.py -s pricing
+docker run -v $(pwd)/output:/log-analysis-pipeline/output --user $(id -u):$(id -g) log-pipeline python main.py -s pricing
 ```
+
+## Volume Mount Ownership
+
+By default, files created inside a Docker container are owned by
+root. When using volume mounts to persist `output/` to the host,
+this means the generated files (plots, datasets) will have root
+ownership on the host machine — requiring `sudo` to modify or
+delete them.
+
+The `--user $(id -u):$(id -g)` flag solves this by telling the
+container to run as the current host user instead of root. This
+ensures all files written to the mounted volume have the correct
+ownership.
+
+If you encounter permission issues with existing output files:
+
+```bash
+sudo rm -rf output
+```
+
+Then re-run the container with the `--user` flag.
 
 ---
 
 # Current Limitations
-
-- **Output does not persist.** Plots generated inside the container
-  are lost when it stops. Volume mounts will be added in Month 2
-  to persist `output/` to the host machine.
 
 - **Logs are generated at build time.** The dataset is baked into
   the image. To analyze different data, the image must be rebuilt.
@@ -160,7 +177,6 @@ docker run log-pipeline python main.py -s pricing
 
 # Future Improvements (Planned)
 
-- Volume mounts for `output/` persistence (Month 2 Week 1)
 - Environment variable support for config path resolution (Month 6)
 - Docker Compose for local development (Month 6)
 - Cloud deployment with Docker on EC2 (Month 6)
