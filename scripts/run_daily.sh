@@ -5,9 +5,15 @@
 
 set -e
 
+cd "$(dirname "$0")/.."
+
 CURRENT_TIME=$(date -u +"%Y%m%d_%H%M%S")
 
 mkdir -p logs/
+
+conda init
+
+conda activate ML
 
 python3 scripts/log_generator.py -c 2000
 
