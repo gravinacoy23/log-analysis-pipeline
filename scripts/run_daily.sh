@@ -11,7 +11,7 @@ CURRENT_TIME=$(date -u +"%Y%m%d_%H%M%S")
 
 mkdir -p logs/
 
-conda init
+source ~/anaconda3/etc/profile.d/conda.sh
 
 conda activate ML
 
