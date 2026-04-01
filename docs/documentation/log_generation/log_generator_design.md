@@ -1,4 +1,4 @@
-# Log Generator — Implementation (v5)
+# Log Generator — Implementation (v6)
 
 ## Objective
 
@@ -103,6 +103,9 @@ metric_thresholds:
     low: 52
     normal: 63
     high: 75
+
+hour_of_day_weights:
+  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 ```
 
 ### Return Format
@@ -138,8 +141,8 @@ The generator has one public function and multiple private helpers:
 - `_close_files(file_handles)` — closes all open file handles
 
 ### Private Functions — Generation
-- `_generate_log_timestamp()` — generates current UTC timestamp for
-  log content
+- `_generate_log_timestamp(hour_weights)` — generates a UTC timestamp
+  with a weighted random hour to simulate peak/off-peak patterns
 - `_generate_runtimestamp()` — generates timestamp used for output
   filenames
 - `_generate_service(services)` — selects a random service from config
@@ -201,6 +204,71 @@ The loop does not perform setup, file management, or cleanup.
 ---
 
 # Metric Generation Strategy
+
+## Timestamp — Peak vs Off-Peak Hour Simulation
+
+Timestamps are not generated using the current system time. Instead,
+the hour component is selected using weighted randomness to simulate
+realistic load patterns across the 24-hour day.
+
+`_generate_log_timestamp(hour_weights)` uses `random.choices` with
+config-driven weights to select the hour. Minutes and seconds are
+generated randomly (0-59). The date is today's date, and the timezone
+is UTC.
+
+The weights follow a bell curve centered around midday — business
+hours (8am-6pm) have higher weights, producing more logs during peak
+hours. Overnight hours (midnight-6am) have low weights, producing
+fewer logs.
+
+```yaml
+hour_of_day_weights:
+  - 1   # 00:00
+  - 2   # 01:00
+  - 3   # 02:00
+  - 4   # 03:00
+  - 5   # 04:00
+  - 6   # 05:00
+  - 7   # 06:00
+  - 8   # 07:00
+  - 9   # 08:00
+  - 10  # 09:00
+  - 11  # 10:00
+  - 12  # 11:00
+  - 12  # 12:00
+  - 11  # 13:00
+  - 10  # 14:00
+  - 9   # 15:00
+  - 8   # 16:00
+  - 7   # 17:00
+  - 6   # 18:00
+  - 5   # 19:00
+  - 4   # 20:00
+  - 3   # 21:00
+  - 2   # 22:00
+  - 1   # 23:00
+```
+
+### Design Decisions
+
+- **Config-driven weights per hour.** Each of the 24 hours has an
+  explicit weight in `config.yaml`. This gives full control over the
+  load distribution — adjusting a single hour's weight does not
+  require code changes.
+
+- **24 individual hours, not grouped periods.** The `hour_of_day`
+  feature in the feature engineering module produces values 0-23.
+  Matching the granularity of the weights to the feature ensures
+  the ML model can detect patterns at the same resolution.
+
+- **Uses `random.choices` with weights.** Same pattern used in
+  `_determine_level` — consistent approach to weighted randomness
+  across the generator.
+
+- **Date is today, not randomized.** The simulation generates logs
+  as if they happened today at various hours. Randomizing the date
+  is deferred — the current focus is hour-of-day patterns, not
+  multi-day trends.
 
 ## CPU
 
@@ -365,6 +433,24 @@ Files are opened in append mode to avoid overwriting existing logs.
 
 ---
 
+# Changes from v5
+
+- `_generate_log_timestamp()` now receives `hour_weights` parameter —
+  hour is selected via `random.choices` with config-driven weights
+  instead of using `datetime.now()`
+- Timestamp uses `date.today()` for the date component and
+  `datetime.combine()` to assemble date + time
+- Added `hour_of_day_weights` to `config.yaml` — 24 weights defining
+  the load distribution across hours of the day
+- `_generator_loop()` updated to pass `raw_data["hour_of_day_weights"]`
+  to `_generate_log_timestamp()`
+- Metric Generation Strategy section expanded with Timestamp section
+  documenting peak/off-peak simulation
+- "Peak vs off-peak hour simulation" removed from Future Improvements
+  — resolved
+
+---
+
 # Changes from v4
 
 - `_generate_response_time()` now receives `cpu`, `mem`, and
@@ -411,7 +497,6 @@ Files are opened in append mode to avoid overwriting existing logs.
 
 # Future Improvements (Planned)
 
-- Peak vs off-peak hour simulation (time-based load patterns)
 - Service-specific instability modeling
 - Temporal correlation between consecutive events
 - Large-scale log generation for dataset creation
