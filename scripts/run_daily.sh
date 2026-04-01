@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #Bash script to execute the complete pipeline from the log generation
-#Saves the output of the main.py, includding logger to an execution .log file
+#Saves the output of the main.py, including logger to an execution .log file
 
 set -e
 
