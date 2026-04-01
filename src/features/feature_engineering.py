@@ -29,7 +29,7 @@ def orchestrate_features(
     return pd.concat(features_list, axis=1)
 
 
-def _context_cols(logs_dataframe: pd.DataFrame, cols: list[str]) -> pd.Series:
+def _context_cols(logs_dataframe: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
     """Retrieves some context columns for the feature engineering dataset.
 
     Args:
@@ -37,7 +37,7 @@ def _context_cols(logs_dataframe: pd.DataFrame, cols: list[str]) -> pd.Series:
         cols: context cols predefined in the orchestrator function
 
     Returns:
-        Depending on the amount of cols a series or a df with the context cols.
+        Df with the context cols.
     """
 
     return logs_dataframe[cols]  # type: ignore
