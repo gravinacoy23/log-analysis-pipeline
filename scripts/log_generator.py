@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime, date, time, timezone, UTC
 from pathlib import Path
 from typing import Any
 from io import TextIOWrapper
@@ -43,7 +43,7 @@ def _generator_loop(
     messages = raw_data["messages"]
 
     for _ in range(iterations):
-        timestamp = _generate_log_timestamp()
+        timestamp = _generate_log_timestamp(raw_data["hour_of_day_weights"])
         service = _generate_service(services)
         message = _generate_message(service, messages)
         user = _generate_user()
@@ -138,7 +138,12 @@ def _load_config() -> dict[str, Any]:
     with config_file.open("r") as f:
         data = yaml.safe_load(f)
 
-        if not data.get("service") or not data.get("messages") or not data.get("level"):
+        if (
+            not data.get("service")
+            or not data.get("messages")
+            or not data.get("level")
+            or not data.get("hour_of_day_weights")
+        ):
             raise ValueError(
                 "One or more of your constant variables in the config file is empty or doesn't exist"
             )
@@ -146,14 +151,25 @@ def _load_config() -> dict[str, Any]:
         return data
 
 
-def _generate_log_timestamp() -> str:
-    """Generate the timestamp for the log.
+def _generate_log_timestamp(hour_weights: list[int]) -> str:
+    """Generate the timestamp for the log, simulates peak and off-peak hours.
+
+    Args:
+        hour_weights: Contains the weights for the 24 hours of the day.
 
     Returns:
-        String with the current date time in GMT time.
+        String with the data and time in GMT for the current log.
     """
+    hours_of_day = list(range(24))
 
-    return datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    chosen_hr = random.choices(hours_of_day, weights=hour_weights)[0]
+    chosen_min = random.randint(0, 59)
+    chosen_sec = random.randint(0, 59)
+
+    current_date = date.today()
+    current_time = time(chosen_hr, chosen_min, chosen_sec, tzinfo=timezone.utc)
+
+    return datetime.combine(current_date, current_time).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _generate_runtimestamp() -> str:
