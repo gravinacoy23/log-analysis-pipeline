@@ -298,5 +298,4 @@ and extracts individual values for each feature function.
 
 ## Future Improvements (Planned)
 
-- Pipeline integration and CSV persistence
 - Feature documentation describing ML relevance per feature
