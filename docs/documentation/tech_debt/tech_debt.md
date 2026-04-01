@@ -92,6 +92,10 @@ them in a way that supports batch processing.
 
 **Target:** Month 3 — needed when building the training dataset for ML.
 
+**Status** [Note needed]
+
+Generator can generate over 20000 logs without a noticable impact in performance.
+
 ---
 
 ### 🔵 Session-based correlation between services
