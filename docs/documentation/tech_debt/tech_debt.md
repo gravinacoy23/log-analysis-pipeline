@@ -380,6 +380,22 @@ goes to a different location.
 
 ---
 
+### 🔵 Dynamic filenames with timestamp to avoid overwriting
+
+**Current behavior**
+Plot filenames are static (e.g. `level_count_plot.png`). Each
+pipeline run overwrites the previous output with no history.
+
+**Why it matters**
+With cron running the pipeline automatically, each run should
+produce a distinct set of outputs. Timestamped filenames would
+preserve history and make it possible to compare results across
+runs.
+
+**Target:** Month 3–4.
+
+---
+
 ### 🔵 Summary metadata file alongside plots
 
 **Current behavior**
@@ -398,15 +414,32 @@ traceable and reproducible.
 
 ---
 
-### 🔵 Configurable output filename or path
+### 🔵 Accept output path as parameter
 
 **Current behavior**
-The output filename is hardcoded as `features.csv` and the directory
-is resolved internally.
+The output directory is resolved internally using `__file__`. There
+is no way for the caller to specify an alternative output location.
 
 **Why it matters**
-Allowing the caller to specify the filename or path would make the
-pipeline more flexible for different runs or environments.
+Accepting the output path as a parameter would make the pipeline
+more flexible for different runs or environments. Same improvement
+as the reporting pipeline.
+
+**Target:** Month 3–4.
+
+---
+
+### 🔵 Dynamic filenames with timestamp to avoid overwriting
+
+**Current behavior**
+The output filename is hardcoded as `features.csv`. Each pipeline
+run overwrites the previous dataset with no history.
+
+**Why it matters**
+With cron running the pipeline automatically, each run should
+produce a distinct dataset. Timestamped filenames would preserve
+history and make it possible to compare feature datasets across
+runs.
 
 **Target:** Month 3–4.
 
