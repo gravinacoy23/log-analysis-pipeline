@@ -217,22 +217,33 @@ def _generate_cpu() -> int:
     return random.randint(30, 70)
 
 
-def _generate_response_time(cpu: int) -> int:
-    """Generate the response time based on the CPU usage.
+def _generate_response_time(
+    cpu: int, mem: int, thresholds: dict[str, dict[str, int]]
+) -> int:
+    """Generate the response time based on the CPU and memory usage.
 
     Args:
         cpu: CPU usage for the given log.
+        mem: mem usage for the given log.
+        thresholds: buckets for each metric.
 
     Returns:
-        Random integer, range varies depending on the CPU usage.
+        Random integer, range varies depending on the CPU or mem usage.
     """
 
-    if cpu < 50:
-        return random.randint(200, 500)
-    elif 50 <= cpu < 70:
+    cpu_thres = thresholds["cpu"]
+    mem_thres = thresholds["mem"]
+
+    if cpu > cpu_thres["normal"] or mem > mem_thres["normal"]:
+        return random.randint(801, 1200)
+
+    elif (
+        cpu_thres["low"] < cpu <= cpu_thres["normal"]
+        or mem_thres["low"] < mem <= mem_thres["normal"]
+    ):
         return random.randint(501, 800)
     else:
-        return random.randint(801, 1200)
+        return random.randint(200, 500)
 
 
 def _determine_level(response_time: int, levels: list[str]) -> str:
@@ -280,7 +291,9 @@ def _generator_loop(
         user = _generate_user()
         memory = _generate_memory()
         cpu = _generate_cpu()
-        response_time = _generate_response_time(cpu)
+        response_time = _generate_response_time(
+            cpu, memory, raw_data["metric_thresholds"]
+        )
         level = _determine_level(response_time, levels)
         log = _format_log(
             timestamp, service, user, cpu, memory, response_time, level, message

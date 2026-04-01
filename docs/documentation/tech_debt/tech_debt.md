@@ -32,6 +32,8 @@ that ML models can learn from.
 
 **Target:** Month 3 — after gaining more experience with data analysis and correlation patterns.
 
+**Status** [Completed]
+
 ---
 
 ### 🔵 Peak vs off-peak hour simulation
