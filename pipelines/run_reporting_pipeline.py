@@ -26,6 +26,8 @@ def report_pipeline(logs_dataframe: pd.DataFrame) -> None:
     plot_dict.update(_count_report(logs_dataframe, "service"))
     plot_dict.update(_corr_report(logs_dataframe))
     plot_dict.update(_dist_report(logs_dataframe, "response_time"))
+    plot_dict.update(_dist_report(logs_dataframe, "cpu"))
+    plot_dict.update(_dist_report(logs_dataframe, "mem"))
 
     for file_name, plot in plot_dict.items():
         file_name = plot_dir / file_name
