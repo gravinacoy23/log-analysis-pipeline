@@ -19,8 +19,11 @@ Month 3 closed with:
 - Config-driven thresholds across generator and features
 
 The feature dataset at `output/datasets/features.csv` is the
-starting point for all Month 4 work. This month is about
-understanding the data before modeling it in Phase 3.
+starting point for correlation analysis and train/test splitting.
+Distribution analysis uses the raw DataFrame produced by
+`run_pipeline`, which contains the original metrics (cpu, mem,
+response_time). This month is about understanding the data before
+modeling it in Phase 3.
 
 ---
 
@@ -28,7 +31,8 @@ understanding the data before modeling it in Phase 3.
 
 ### Probability and Distributions
 
-Using the feature dataset and the raw DataFrame:
+Using the raw DataFrame from `run_pipeline` (contains cpu, mem,
+response_time, level, service, and other original columns):
 
 1. **Plot distributions** of response_time, cpu, and mem
    - Use histplot from seaborn (already in the project)
@@ -51,8 +55,11 @@ Using the feature dataset and the raw DataFrame:
 
 4. **Correlation matrix of the feature dataset**
    - You already have `convert_corr_matrix()` and the heatmap
-   - Run it on the feature dataset and interpret results
-   - Verify: is CPU correlated with response_time? Is memory?
+   - Run it on both the raw DataFrame and the feature dataset
+   - On the raw DataFrame: verify CPU→response_time and
+     memory→response_time correlations
+   - On the feature dataset: interpret correlations between
+     derived features
    - The generator was designed to produce these correlations —
      confirm they exist in the data
 
@@ -93,7 +100,8 @@ is analytical work using existing tools.
 
 ### Day 1
 - Load the feature dataset from CSV
-- Plot distributions of response_time, cpu, mem
+- Run the pipeline to get the raw DataFrame
+- Plot distributions of response_time, cpu, mem (from raw DataFrame)
 - Describe each distribution (shape, center, spread)
 
 ### Day 2
@@ -102,8 +110,8 @@ is analytical work using existing tools.
 - Outlier identification
 
 ### Day 3
-- Correlation matrix on feature dataset
-- Interpret: which features are correlated and why
+- Correlation matrix on raw DataFrame (verify CPU→RT, MEM→RT)
+- Correlation matrix on feature dataset (interpret derived features)
 - Document correlation vs causation distinction
 
 ### Day 4
