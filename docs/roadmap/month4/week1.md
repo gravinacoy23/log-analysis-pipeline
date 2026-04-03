@@ -2,10 +2,14 @@
 
 ## Sprint Goal
 
-Begin building statistical intuition using the feature dataset
-produced in Month 3. By the end of this week you should understand
+Begin building statistical intuition by analyzing the data your
+pipeline produces. By the end of this week you should understand
 the distributions in your data, verify the correlations you designed
 into the generator, and perform your first train/test split.
+
+This sprint is about **analysis, not engineering**. You are not
+building new pipeline infrastructure — you are using what you
+built in Months 1–3 to understand your data before modeling it.
 
 ---
 
@@ -18,70 +22,154 @@ Month 3 closed with:
 - Automated pipeline via bash script + cron
 - Config-driven thresholds across generator and features
 
-The feature dataset at `output/datasets/features.csv` is the
-starting point for correlation analysis and train/test splitting.
-Distribution analysis uses the raw DataFrame produced by
-`run_pipeline`, which contains the original metrics (cpu, mem,
-response_time). This month is about understanding the data before
-modeling it in Phase 3.
+This sprint uses two data sources:
+
+- **Raw DataFrame** (from `run_pipeline`): contains cpu, mem,
+  response_time, level, service — used for distribution analysis
+  and correlation verification
+- **Feature dataset** (`output/datasets/features.csv`): contains
+  derived features — used for train/test splitting
+
+---
+
+## New Module This Sprint
+
+```
+src/analysis/statistical_analysis.py
+```
+
+This module contains functions for statistical analysis: descriptive
+statistics, cross-service comparison, and train/test splitting.
+During development, functions are tested via a `__main__` block —
+same pattern used across the project. Pipeline integration is
+deferred until the module is stable and the scope is clear.
 
 ---
 
 ## Sprint Focus
 
-### Probability and Distributions
+### Day 1 — Distribution Analysis
 
-Using the raw DataFrame from `run_pipeline` (contains cpu, mem,
-response_time, level, service, and other original columns):
+**Goal:** Plot and interpret the distributions of the three numeric
+metrics in the raw DataFrame.
 
-1. **Plot distributions** of response_time, cpu, and mem
-   - Use histplot from seaborn (already in the project)
-   - Identify whether each is uniform, normal, or skewed
-   - Explain *why* each distribution looks the way it does —
-     connect back to how the generator produces the data
+**Operational improvement:** Add cpu and mem distribution plots to
+the existing reporting pipeline. This is a small change — two
+additional calls to `_dist_report()` in `run_reporting_pipeline.py`.
 
-2. **Compare distributions across services**
-   - Does shopping have different CPU patterns than booking?
-   - This verifies whether the generator produces uniform
-     behavior across services (it should, since service-specific
-     instability is not yet implemented)
+**Analysis work:**
 
-3. **Outlier detection**
-   - Use descriptive statistics: mean, median, std, percentiles
-   - Identify if any values fall outside expected ranges
-   - Connect findings to the generator's configured ranges
+1. Run the pipeline and examine the three distribution plots
+   (response_time, cpu, mem)
+2. For each distribution, identify:
+   - Shape: uniform, normal, or skewed?
+   - Center: where do most values concentrate?
+   - Spread: how wide is the range?
+3. Explain **why** each distribution looks the way it does —
+   connect back to how the generator produces the data
+   - cpu: `random.randint(30, 70)` — what shape does this produce?
+   - mem: `random.randint(40, 75)` — same question
+   - response_time: depends on cpu AND mem thresholds — how does
+     this affect the shape?
 
-### Correlation Analysis
+**Deliverable:** Three distribution plots saved to `output/plots/`.
+Written interpretation of each distribution in
+`docs/statistical_analysis.md`.
 
-4. **Correlation matrix of the feature dataset**
-   - You already have `convert_corr_matrix()` and the heatmap
-   - Run it on both the raw DataFrame and the feature dataset
-   - On the raw DataFrame: verify CPU→response_time and
-     memory→response_time correlations
-   - On the feature dataset: interpret correlations between
-     derived features
-   - The generator was designed to produce these correlations —
-     confirm they exist in the data
+---
 
-5. **Correlation vs causation**
-   - Document at least one example from your data where
-     correlation exists but causation is the generator's design,
-     not a real-world relationship
-   - This is a conceptual exercise, not a coding task
+### Day 2 — Descriptive Statistics and Cross-Service Comparison
 
-### Train / Test Split
+**Goal:** Compute summary statistics and verify that the generator
+produces uniform behavior across services.
 
-6. **First split with sklearn**
-   - Install scikit-learn if not already in your environment
-   - Use `train_test_split` on the feature dataset
-   - Choose an appropriate split ratio (80/20 or 70/30)
-   - Save train and test sets to `output/datasets/`
+**New code in `statistical_analysis.py`:**
 
-7. **Verify the split**
-   - Check that class balance (INFO/WARNING/ERROR distribution)
-     is preserved in both sets
-   - If not balanced, learn about `stratify` parameter
-   - Document the split ratio and verification
+1. **Descriptive statistics function** — given a DataFrame, compute
+   mean, median, std, min, max, and percentiles (25th, 50th, 75th)
+   for numeric columns
+2. **Cross-service comparison** — run the pipeline for each service
+   individually, compute descriptive statistics for each, and
+   compare. Since the generator does not differentiate between
+   services, the statistics should be similar across all three.
+
+**Analysis work:**
+
+3. Run descriptive statistics on the raw DataFrame
+4. Identify if any values fall outside the generator's configured
+   ranges (cpu 30–70, mem 40–75, response_time 200–1200)
+5. Compare statistics across services — are they similar?
+   Document why or why not
+
+**Deliverable:** Descriptive statistics output. Cross-service
+comparison documented in `docs/statistical_analysis.md`.
+
+---
+
+### Day 3 — Correlation Analysis
+
+**Goal:** Verify the correlations designed into the generator and
+interpret the feature dataset correlations.
+
+**Using existing tools** (`convert_corr_matrix()` and
+`plot_correlation()`):
+
+1. Run the correlation matrix on the **raw DataFrame** — verify:
+   - Is cpu correlated with response_time?
+   - Is mem correlated with response_time?
+   - The generator was designed to produce these — confirm
+     they exist
+2. Run the correlation matrix on the **feature dataset** —
+   interpret:
+   - Which derived features are correlated?
+   - Do the correlations make sense given how the features
+     were constructed?
+
+**Conceptual exercise (no code):**
+
+3. **Correlation vs causation** — document at least one example
+   from your data where correlation exists but causation is the
+   generator's design, not a real-world relationship
+
+**Deliverable:** Correlation heatmaps for both datasets.
+Interpretation and correlation vs causation discussion documented
+in `docs/statistical_analysis.md`.
+
+---
+
+### Day 4 — Train / Test Split
+
+**Goal:** Split the feature dataset for future ML consumption.
+
+**New code in `statistical_analysis.py`:**
+
+1. Install scikit-learn in your conda environment
+2. Write a function that uses `train_test_split` on the feature
+   dataset
+3. Choose a split ratio (80/20 is standard)
+4. Save train and test sets to `output/datasets/`
+
+**Verification:**
+
+5. Check that class distribution is preserved in both sets —
+   the feature dataset does not have a `level` column directly,
+   so think about what column can serve as a proxy, or whether
+   you need to bring `level` into the feature dataset for
+   stratification
+6. If the split is not balanced, learn about the `stratify`
+   parameter
+
+**Deliverable:** `train.csv` and `test.csv` saved to
+`output/datasets/`. Split verification documented.
+
+---
+
+### Day 5–7 (Buffer)
+
+- Complete `docs/statistical_analysis.md` with all findings
+- Update `session_context.md`
+- Check if any tech debt items emerged during the sprint
+- Sprint review and checkpoint
 
 ---
 
@@ -89,53 +177,25 @@ response_time, level, service, and other original columns):
 
 | Item | Module | Connection |
 |------|--------|------------|
-| Expand metric combinations | log_analysis | Distribution analysis needs more metric views |
+| Expand metric combinations | log_analysis | Resolved by adding cpu/mem dist to reporting |
 
-No major tech debt items are required for this sprint. The focus
-is analytical work using existing tools.
-
----
-
-## Day-by-Day Suggestion
-
-### Day 1
-- Load the feature dataset from CSV
-- Run the pipeline to get the raw DataFrame
-- Plot distributions of response_time, cpu, mem (from raw DataFrame)
-- Describe each distribution (shape, center, spread)
-
-### Day 2
-- Compare distributions across services
-- Descriptive statistics: mean, median, std, percentiles
-- Outlier identification
-
-### Day 3
-- Correlation matrix on raw DataFrame (verify CPU→RT, MEM→RT)
-- Correlation matrix on feature dataset (interpret derived features)
-- Document correlation vs causation distinction
-
-### Day 4
-- Install scikit-learn
-- First train/test split
-- Verify class balance in both sets
-- Save splits to output/datasets/
-
-### Day 5–7 (Buffer)
-- Begin statistical analysis report in docs/
-- Documentation updated
-- Sprint review and checkpoint
+No major tech debt items are required. The focus is analytical
+work using existing tools.
 
 ---
 
-## Sprint Deliverable
+## Sprint Deliverables
 
 At the end of Week 1 you must have:
 
-- Distribution plots for numeric features
-- Cross-service distribution comparison
-- Correlation matrix with interpretation
+- Distribution plots for response_time, cpu, and mem
+- Descriptive statistics for the raw DataFrame
+- Cross-service comparison with interpretation
+- Correlation matrices for raw DataFrame and feature dataset
+- Correlation vs causation documented
 - Train/test split saved to output/datasets/
-- Split verification documented
+- `docs/statistical_analysis.md` with all findings and
+  interpretations
 - Commits with clear messages pushed to GitHub
 
 ---
@@ -145,7 +205,7 @@ At the end of Week 1 you must have:
 A task is complete when:
 
 - Code runs
-- Analysis includes interpretation, not just plots
-- Findings are documented
+- Analysis includes interpretation, not just plots or numbers
+- Findings are documented in `docs/statistical_analysis.md`
 - Commit pushed
 - Results reproducible
