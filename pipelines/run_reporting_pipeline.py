@@ -10,7 +10,7 @@ import pandas as pd
 from matplotlib.figure import Figure
 
 
-def report_pipeline(logs_dataframe: pd.DataFrame) -> None:
+def run_report_pipeline(logs_dataframe: pd.DataFrame) -> None:
     """Run the pipeline to generate reports and visualizations and save them to
     the output dir.
 

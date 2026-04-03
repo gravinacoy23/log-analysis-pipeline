@@ -3,7 +3,7 @@ import logging
 import pandas as pd
 from src.config_loader import load_config
 from pipelines.run_pipeline import run_pipeline
-from pipelines.run_reporting_pipeline import report_pipeline
+from pipelines.run_reporting_pipeline import run_report_pipeline
 from pipelines.run_features_pipeline import run_features_pipeline
 
 
@@ -20,7 +20,7 @@ def main(service_name: str) -> pd.DataFrame:
     config_data = load_config()
 
     logs_dataframe = run_pipeline(service_name, config_data)
-    report_pipeline(logs_dataframe)
+    run_report_pipeline(logs_dataframe)
     run_features_pipeline(logs_dataframe, config_data)
 
     return logs_dataframe
