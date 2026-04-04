@@ -40,4 +40,6 @@ def _split_dataset(dataset: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         a tuple with the 2 DFs for train and test.
     """
 
-    return train_test_split(dataset, test_size=0.2, stratify=dataset["is_error"])  # pyright: ignore
+    return train_test_split(
+        dataset, test_size=0.2, stratify=dataset["is_error"], random_state=42
+    )  # pyright: ignore

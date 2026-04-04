@@ -42,7 +42,7 @@ Add `random_state=42` (or any fixed integer) to the
 `train_test_split` call. Consider whether this value should come
 from the config file for flexibility.
 
-**Status** [ ]
+**Status** [Completed]
 
 ---
 
