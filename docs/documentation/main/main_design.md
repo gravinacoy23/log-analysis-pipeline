@@ -1,4 +1,4 @@
-# Main — Implementation (v5)
+# Main — Implementation (v6)
 
 ## Objective
 
@@ -23,8 +23,9 @@ appropriate pipelines.
 ```
 user → main.py → load_config() → config dict
               → run_pipeline.py (receives config)
-              → run_reporting_pipeline.py
+              → run_report_pipeline.py
               → run_features_pipeline.py (receives config)
+              → run_statistical_pipeline.py
 ```
 
 ---
@@ -42,7 +43,8 @@ main.py  (project root)
 ## `main(service_name)`
 
 Loads configuration, calls the data pipeline, the reporting
-pipeline, and the features pipeline in sequence.
+pipeline, the features pipeline, and the statistical pipeline
+in sequence.
 
 **Parameters:**
 - `service_name` (str) — name of the service to analyze
@@ -105,14 +107,19 @@ If no argument is provided, the default service is `booking`.
 1. `load_config()` — loads configuration once
 2. `run_pipeline(service_name, config_data)` — ingestion, parsing,
    and DataFrame creation with computed columns
-3. `report_pipeline(logs_dataframe)` — generates all visualizations
+3. `run_report_pipeline(logs_dataframe)` — generates all visualizations
    and saves them to `output/plots/`
 4. `run_features_pipeline(logs_dataframe, config_data)` — generates
    derived features and saves the dataset to `output/datasets/`
+5. `run_statistical_pipeline()` — loads the feature dataset, performs
+   train/test split, and saves splits to `output/datasets/`
 
 The config dict is passed to pipelines that need it. The DataFrame
 produced by the data pipeline is passed to both the reporting and
-features pipelines. `main()` does not modify or inspect it.
+features pipelines. The statistical pipeline is self-contained — it
+loads its input from disk because the feature dataset is already
+persisted by step 4. `main()` does not modify or inspect any
+intermediate results.
 
 ---
 
@@ -138,6 +145,28 @@ belongs in the pipeline layer, not in the entry point.
 The service name is passed as a CLI argument rather than hardcoded.
 This makes the pipeline reusable without modifying source code.
 
+## Pipeline execution order matters
+The statistical pipeline depends on the feature dataset existing on
+disk. `main.py` guarantees the order: features pipeline runs before
+statistical pipeline. If the order is violated, the statistical
+pipeline raises a `ValueError` because the directory or file does
+not exist.
+
+---
+
+# Changes from v5
+
+- Added `run_statistical_pipeline()` as fourth pipeline call —
+  loads feature dataset, performs train/test split, and persists
+  splits to `output/datasets/`
+- Imports `run_statistical_pipeline` from
+  `pipelines.run_statistical_pipeline`
+- `run_report_pipeline` renamed from `report_pipeline` for naming
+  consistency with other pipelines (`run_pipeline`,
+  `run_features_pipeline`, `run_statistical_pipeline`)
+- System context and pipeline coordination updated to reflect
+  four pipelines
+
 ---
 
 # Changes from v4
@@ -149,17 +178,6 @@ This makes the pipeline reusable without modifying source code.
   `pipelines.run_features_pipeline`
 - System context and pipeline coordination updated to reflect
   three pipelines
-
----
-
-# Changes from v3
-
-- `load_config()` moved from `run_pipeline.py` to `main()` —
-  config is now loaded once and passed to pipelines as a parameter
-- `run_pipeline()` now receives `config_data` as second argument
-- `main()` imports `load_config` from `src.config_loader`
-- `run_pipeline` import no longer triggers config loading internally
-- Pipeline coordination section updated to reflect config passing
 
 ---
 

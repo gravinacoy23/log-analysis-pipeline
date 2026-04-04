@@ -5,6 +5,7 @@ from src.config_loader import load_config
 from pipelines.run_pipeline import run_pipeline
 from pipelines.run_reporting_pipeline import run_report_pipeline
 from pipelines.run_features_pipeline import run_features_pipeline
+from pipelines.run_statistical_pipeline import run_statistical_pipeline
 
 
 def main(service_name: str) -> pd.DataFrame:
@@ -22,6 +23,7 @@ def main(service_name: str) -> pd.DataFrame:
     logs_dataframe = run_pipeline(service_name, config_data)
     run_report_pipeline(logs_dataframe)
     run_features_pipeline(logs_dataframe, config_data)
+    run_statistical_pipeline()
 
     return logs_dataframe
 
