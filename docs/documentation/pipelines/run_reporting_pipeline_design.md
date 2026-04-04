@@ -1,4 +1,4 @@
-# Run Reporting Pipeline — Design (v2)
+# Run Reporting Pipeline — Design (v3)
 
 ## Objective
 
@@ -16,7 +16,7 @@ system. It connects analytical functions with the visualizer and
 handles output persistence.
 
 ```
-main.py → run_reporting_pipeline.py → log_analysis.py → log_visualizer.py → output/plots/
+main.py → run_report_pipeline.py → log_analysis.py → log_visualizer.py → output/plots/
 ```
 
 ---
@@ -53,7 +53,7 @@ pipelines/run_reporting_pipeline.py
 
 ---
 
-## Function: report_pipeline()
+## Function: run_report_pipeline()
 
 ### Parameters
 
@@ -82,7 +82,9 @@ pipelines/run_reporting_pipeline.py
 3. _count_report(df, "service")                 → {filename: Figure}
 4. _corr_report(df)                             → {filename: Figure}
 5. _dist_report(df, "response_time")            → {filename: Figure}
-6. for each figure → figure.savefig(path)       → output/plots/
+6. _dist_report(df, "cpu")                      → {filename: Figure}
+7. _dist_report(df, "mem")                      → {filename: Figure}
+8. for each figure → figure.savefig(path)       → output/plots/
 ```
 
 ### Design Decisions
@@ -95,7 +97,7 @@ pipelines/run_reporting_pipeline.py
 
 - **Runs all reports every time.** The orchestrator calls all report
   functions unconditionally. Selective report execution is deferred
-  to future work — the current set of 4 reports is small enough
+  to future work — the current set of 6 reports is small enough
   that running all of them is acceptable.
 
 - **One save loop instead of saving in each function.** Persistence
@@ -180,22 +182,18 @@ pipelines/run_reporting_pipeline.py
 
 ---
 
-## Changes from v1
+## Changes from v2
 
-- Renamed `report_level_pipeline()` to `report_pipeline()` — reflects
-  the generalized scope supporting multiple report types
-- Added `_count_report()` — generates count plots for any categorical
-  column, called for both level and service
-- Added `_corr_report()` — generates correlation heatmap, delegates
-  matrix computation to the analysis layer
-- Added `_dist_report()` — generates distribution histogram for any
-  numeric column
-- Dict collector pattern replaces single hardcoded report — all
-  figures collected and saved in a single loop
-- Removed `count_by_level_all()` call and `.to_dict()` conversion —
-  seaborn-based visualizer receives DataFrames directly
-- "Generalize to support additional report types" removed from Future
-  Improvements — resolved
+- Function renamed from `report_pipeline()` to
+  `run_report_pipeline()` — consistent naming with other pipeline
+  functions (`run_pipeline`, `run_features_pipeline`,
+  `run_statistical_pipeline`)
+- Added distribution reports for `cpu` and `mem` — two additional
+  calls to `_dist_report()`, reusing the existing function with
+  different column names
+- Pipeline flow updated to reflect 6 reports instead of 4
+- "Expand metric combinations" tech debt item resolved by adding
+  cpu and mem distribution plots
 
 ---
 
