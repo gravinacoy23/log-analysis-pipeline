@@ -1,12 +1,13 @@
-# Log Statistical Analysis — Design (v1)
+# Log Statistical Analysis — Design (v2)
 
 ## Objective
 
 Provide the statistical analysis layer of the pipeline.
 Receives a feature dataset and performs statistical operations
-required for ML preparation: descriptive statistics and
-train/test splitting. Each function has a single responsibility
-and returns its result to the caller.
+required for ML preparation: descriptive statistics, train/test
+splitting, and model evaluation via confusion matrix. Each
+function has a single responsibility and returns its result
+to the caller.
 
 ---
 
@@ -14,7 +15,8 @@ and returns its result to the caller.
 
 The statistical analysis module sits between the feature dataset
 and the ML preparation outputs. It receives a DataFrame and
-produces statistical summaries and split datasets.
+produces statistical summaries, split datasets, and evaluation
+metrics.
 
 ```
 features.csv → run_statistical_pipeline.py → log_statistical_analysis.py → train/test DataFrames
@@ -99,6 +101,60 @@ src/analysis/log_statistical_analysis.py
 
 ---
 
+## Function: create_confusion_matrix()
+
+### Parameters
+
+- `results` — `list[bool]` of actual values (ground truth)
+- `predictions` — `list[bool]` of predicted values from a model
+
+### Returns
+
+- `tuple[int, int, int, int]` — counts of True Positives,
+  True Negatives, False Positives, and False Negatives in
+  that order
+
+### Implementation Details
+
+- Iterates over both lists in parallel using `zip()`
+- Guard clause skips any pair where either value is not a
+  boolean — silent `continue`, no logging, since input comes
+  from internal code not external data
+- Classifies each pair into one of four categories:
+  - **True Positive:** prediction is True, result is True
+  - **True Negative:** prediction is False, result is False
+  - **False Positive:** prediction is True, result is False
+  - **False Negative:** prediction is False, result is True
+- Uses idiomatic boolean checks (`if prediction` instead of
+  `if prediction == True`)
+
+### Design Decisions
+
+- **Manual implementation instead of sklearn.** The function
+  exists to build understanding of how a confusion matrix works.
+  `sklearn.metrics.confusion_matrix` provides the same
+  functionality but using it without understanding the mechanics
+  would be vibe coding. The manual implementation stays as a
+  learning artifact and is used for simulated model evaluation.
+
+- **Returns a tuple, not a dict.** Four values in a fixed,
+  documented order. The caller knows the order from the
+  docstring and type hint. A dict would add overhead for a
+  return value that is always the same four counters.
+
+- **Guard clause over strict validation.** Invalid values are
+  skipped silently rather than raising an error. The function
+  processes internal data (boolean Series converted to lists),
+  not external input. A guard clause is sufficient; a logger
+  would be over-engineering for this context.
+
+- **Not called by the orchestrator.** This function is used for
+  manual model evaluation during development and analysis. It
+  will be integrated into the pipeline when ML training begins
+  in Phase 3.
+
+---
+
 ## Function: _split_dataset()
 
 ### Parameters
@@ -115,6 +171,7 @@ src/analysis/log_statistical_analysis.py
 - Split ratio: 80% train, 20% test via `test_size=0.2`
 - Stratified on `is_error` column to preserve class distribution
   in both sets
+- `random_state=42` for reproducible splits
 - `pyright: ignore` comment on the return — sklearn's type stubs
   declare the return type as `list`, but the actual return values
   are DataFrames when a DataFrame is passed as input. This is a
@@ -139,6 +196,12 @@ src/analysis/log_statistical_analysis.py
   patterns; the test set needs to be large enough to evaluate
   reliably.
 
+- **`random_state=42` for determinism.** Ensures every execution
+  produces the same split. Required by the project's Definition
+  of Done (results reproducible). The value is hardcoded in the
+  function — this is the only split in the project, so config
+  externalization is unnecessary.
+
 - **Private function.** The split is called by the orchestrator,
   not directly by the pipeline. This keeps the module's public
   interface clean — the pipeline interacts only with
@@ -146,16 +209,22 @@ src/analysis/log_statistical_analysis.py
 
 ---
 
-## Changes from v0
+## Changes from v1
 
-- Initial implementation
+- Added `create_confusion_matrix()` — manual implementation of
+  confusion matrix computation for model evaluation
+- Added guard clause in confusion matrix for non-boolean values
+- Updated `_split_dataset()` to include `random_state=42` for
+  reproducibility (resolved bug #27)
+- "Add `random_state` parameter" removed from Future Improvements
+  — resolved
 
 ---
 
 ## Future Improvements (Planned)
 
-- Add `random_state` parameter for reproducible splits
 - Statistical report generation with distribution summaries
 - Cross-service comparison functions
 - Integration of `general_statistics()` into the orchestrator
   when a report pipeline is implemented
+- Precision, recall, and F1 score computation functions

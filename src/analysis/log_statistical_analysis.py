@@ -43,3 +43,42 @@ def _split_dataset(dataset: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     return train_test_split(
         dataset, test_size=0.2, stratify=dataset["is_error"], random_state=42
     )  # pyright: ignore
+
+
+def create_confusion_matrix(
+    results: list[bool], predictions: list[bool]
+) -> tuple[int, int, int, int]:
+    """Creates the confusion matrix given a list of results and predictions.
+
+    Args:
+        results: real results of the target value
+        predictions: predictions of the model
+
+    Returns:
+        Tuple with the values of TP, TN, FP, FN.
+    """
+
+    true_positive = true_negative = false_positive = false_negative = 0
+    for result, prediction in zip(results, predictions):
+        if not isinstance(result, bool) or not isinstance(prediction, bool):
+            continue
+
+        if prediction:
+            if result:
+                true_positive += 1
+            else:
+                false_positive += 1
+        else:
+            if not result:
+                true_negative += 1
+            else:
+                false_negative += 1
+
+    return true_positive, true_negative, false_positive, false_negative
+
+
+if __name__ == "__main__":
+    results = [True, False, True, False, True]
+    predictions = [True, False, 0, False, True]
+
+    print(create_confusion_matrix(results, predictions))
