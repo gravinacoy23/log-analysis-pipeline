@@ -18,7 +18,8 @@ def run_statistical_pipeline() -> None:
 
 
 def _get_directory() -> Path:
-    """Resolves the directory where the file is located.
+    """Resolves the directory where the features.csv file is located:
+    root/output/datasets is located.
 
     Returns:
         Directory of the file.

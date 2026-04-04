@@ -73,7 +73,7 @@ the feature dataset and saving the train/test splits.
 Update the docstring to specify that it resolves the
 `output/datasets/` directory.
 
-**Status** [ ]
+**Status** [Completed]
 
 ---
 
