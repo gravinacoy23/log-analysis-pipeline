@@ -1,4 +1,20 @@
 import pandas as pd
+from sklearn.model_selection import train_test_split
+
+
+def orchestrate_statistics(dataset: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Orchestrates the execution of statistical tasks.
+
+    Args:
+        dataset: dataframe with all the feature engineering rows and cols.
+
+    Returns:
+        A tuple with the 2 DFs for train and test
+    """
+
+    train_data, test_data = _split_dataset(dataset)
+
+    return train_data, test_data
 
 
 def general_statistics(logs_dataframe: pd.DataFrame) -> pd.DataFrame:
@@ -14,71 +30,14 @@ def general_statistics(logs_dataframe: pd.DataFrame) -> pd.DataFrame:
     return logs_dataframe.describe()
 
 
-if __name__ == "__main__":
-    log_dicts = [
-        {
-            "timestamp": "2026-03-09T23:13:29Z",
-            "service": "booking",
-            "user": 11,
-            "cpu": 35,
-            "mem": 49,
-            "response_time": 378,
-            "level": "INFO",
-            "msg": "Seat booked",
-        },
-        {
-            "timestamp": "2026-03-09T23:13:29Z",
-            "service": "booking",
-            "user": 96,
-            "cpu": 38,
-            "mem": 72,
-            "response_time": 351,
-            "level": "INFO",
-            "msg": "Booking failed",
-        },
-        {
-            "timestamp": "2026-03-09T23:13:29Z",
-            "service": "booking",
-            "user": 65,
-            "cpu": 57,
-            "mem": 40,
-            "response_time": 624,
-            "level": "WARNING",
-            "msg": "Seat booked",
-        },
-        {
-            "timestamp": "2026-03-09T23:13:29Z",
-            "service": "booking",
-            "user": 35,
-            "cpu": 58,
-            "mem": 52,
-            "response_time": 698,
-            "level": "WARNING",
-            "msg": "Booking confirmed",
-        },
-        {
-            "timestamp": "2026-03-09T23:13:29Z",
-            "service": "booking",
-            "user": 60,
-            "cpu": 40,
-            "mem": 73,
-            "response_time": 207,
-            "level": "INFO",
-            "msg": "Seat booked",
-        },
-        {
-            "timestamp": "2026-03-09T23:13:29Z",
-            "service": "booking",
-            "user": 60,
-            "cpu": 40,
-            "mem": 73,
-            "response_time": 207,
-            "level": "ERROR",
-            "msg": "Seat booked",
-        },
-    ]
+def _split_dataset(dataset: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Split the dataset in train and test.
 
-    dataframe = pd.DataFrame(log_dicts)
+    Args:
+        dataset: dataframe with all the feature engineering rows and cols.
 
-    print(dataframe)
-    print(general_statistics(dataframe))
+    Returns:
+        a tuple with the 2 DFs for train and test.
+    """
+
+    return train_test_split(dataset, test_size=0.2, stratify=dataset["is_error"])  # pyright: ignore
