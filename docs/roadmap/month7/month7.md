@@ -99,7 +99,7 @@ log-analysis-pipeline/
 
 # Data Persistence Strategy
 
-By end of Month 5 the pipeline should support multiple persistence
+By end of Month 7 the pipeline should support multiple persistence
 targets:
 
 - **S3** — raw logs and processed datasets (bulk storage)
