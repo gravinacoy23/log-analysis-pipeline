@@ -75,10 +75,3 @@ def create_confusion_matrix(
                 false_negative += 1
 
     return true_positive, true_negative, false_positive, false_negative
-
-
-if __name__ == "__main__":
-    results = [True, False, True, False, True]
-    predictions = [True, False, 0, False, True]
-
-    print(create_confusion_matrix(results, predictions))
