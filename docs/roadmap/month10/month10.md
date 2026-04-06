@@ -2,9 +2,9 @@
 
 ## Primary Goal
 
-Train the first ML model on the log dataset built across Phases 1 and 2.
-Start with classical algorithms — understand them deeply before moving
-to neural networks.
+Train the first ML model on the log dataset built across Phases 1,
+1.5, and 2. Start with classical algorithms — understand them deeply
+before moving to neural networks.
 
 ---
 
@@ -15,13 +15,13 @@ to neural networks.
 - What linear regression is and when to use it
 - Implementing from scratch (gradient descent)
 - Implementing with scikit-learn
-- Predicting `response_time` from `cpu` and `mem`
+- Predicting a numeric target from the feature dataset
 - Interpreting coefficients
 
 ## Logistic Regression
 
 - Binary and multiclass classification
-- Predicting log level (INFO / WARNING / ERROR) from metrics
+- Predicting the target variable from derived features
 - Decision boundary interpretation
 - Probability outputs
 
@@ -49,16 +49,23 @@ to neural networks.
 
 # ML Objective
 
-Using the feature dataset from Month 3:
+Using the feature dataset produced by the pipeline:
 
 **Task 1 — Regression:**
-Predict `response_time` from `cpu`, `mem`, and service.
+Identify a numeric column in the feature dataset suitable for
+regression. Predict it from other features. The specific target
+depends on the dataset available at this point — if working with
+real web server logs, response size or request rate could be
+candidates.
 
 **Task 2 — Classification:**
-Predict `level` (INFO / WARNING / ERROR) from `cpu`, `mem`, and `response_time`.
+Predict the error/non-error classification (or equivalent target)
+from the available features. This is the primary ML task — the
+feature dataset was designed with this in mind since Month 4.
 
-Task 2 is interesting because the generator designed this relationship
-explicitly — the model should be able to learn it.
+The specific features and targets will be defined when Month 10
+begins, based on whatever dataset the pipeline produces at that
+point (synthetic or real web server logs).
 
 ---
 
@@ -85,7 +92,7 @@ log-analysis-pipeline/
 # Model Versioning
 
 Models are saved with a version suffix — `logistic_v1.pkl`, `linear_v1.pkl`.
-This is manual for now. Experiment tracking tools come in Month 9.
+This is manual for now. Experiment tracking tools come in Month 11.
 
 ---
 

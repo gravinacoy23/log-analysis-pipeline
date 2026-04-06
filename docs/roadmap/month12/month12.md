@@ -51,13 +51,13 @@ understand how neural networks work and how to use them in a pipeline.
 
 # ML Objective
 
-Using the same log classification task from Month 10:
-
-**Task: Predict log level (INFO / WARNING / ERROR) from cpu, mem, response_time, service**
+Using the same classification task from Month 10:
 
 Build a feedforward neural network and compare results with logistic
-regression from Month 8. The goal is not to beat the classical model —
-it is to understand the process.
+regression from Month 10. The specific features and target depend on
+the dataset available at this point. The goal is not to beat the
+classical model — it is to understand the process and compare
+approaches.
 
 ---
 
