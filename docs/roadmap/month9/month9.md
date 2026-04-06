@@ -1,4 +1,4 @@
-# Month 7 — Cloud-Native Thinking
+# Month 9 — Cloud-Native Thinking
 
 ## Primary Goal
 
@@ -60,7 +60,7 @@ This month the repository becomes portfolio-ready.
 
 # Deliverables
 
-By the end of Month 7 you must have:
+By the end of Month 9 you must have:
 
 - Fully stateless cloud pipeline
 - Portfolio-ready repository

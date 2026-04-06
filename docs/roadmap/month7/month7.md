@@ -1,4 +1,4 @@
-# Month 5 — AWS Core
+# Month 7 — AWS Core
 
 ## Primary Goal
 
@@ -60,7 +60,7 @@ from a pipeline. This is a core skill for Data and ML Engineering.
 
 # Pipeline Evolution
 
-By end of Month 5 the pipeline runs in two modes:
+By end of Month 7 the pipeline runs in two modes:
 
 ### Local Mode
 ```
@@ -123,7 +123,7 @@ does not hardcode the persistence target.
 
 # Deliverables
 
-By the end of Month 5 you must have:
+By the end of Month 7 you must have:
 
 - Logs stored in S3
 - Pipeline running on EC2

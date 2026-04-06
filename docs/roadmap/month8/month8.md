@@ -1,4 +1,4 @@
-# Month 6 — Cloud Structure & Automation
+# Month 8 — Cloud Structure & Automation
 
 ## Primary Goal
 
@@ -45,7 +45,7 @@ to observe the pipeline in production.
 
 # Pipeline Evolution
 
-By end of Month 6:
+By end of Month 8:
 
 ```
 Local:
@@ -76,7 +76,7 @@ log-analysis-pipeline/
 
 # Deliverables
 
-By the end of Month 6 you must have:
+By the end of Month 8 you must have:
 
 - Dockerized pipeline running locally and on EC2
 - Environment separation implemented

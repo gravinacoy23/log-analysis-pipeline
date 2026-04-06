@@ -1,4 +1,4 @@
-# Month 9 — Structured ML Pipeline
+# Month 11 — Structured ML Pipeline
 
 ## Primary Goal
 
@@ -49,7 +49,7 @@ This builds the intuition for why tools like MLflow exist.
 
 # ML Pipeline Evolution
 
-By end of Month 9 the ML workflow looks like this:
+By end of Month 11 the ML workflow looks like this:
 
 ```
 config.yaml (hyperparameters)
@@ -83,7 +83,7 @@ log-analysis-pipeline/
 
 # Deliverables
 
-By the end of Month 9 you must have:
+By the end of Month 11 you must have:
 
 - Reproducible training pipeline
 - At least 3 documented experiments with different hyperparameters

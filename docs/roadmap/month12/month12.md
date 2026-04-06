@@ -1,4 +1,4 @@
-# Month 10 — Introduction to TensorFlow
+# Month 12 — Introduction to TensorFlow
 
 ## Primary Goal
 
@@ -51,7 +51,7 @@ understand how neural networks work and how to use them in a pipeline.
 
 # ML Objective
 
-Using the same log classification task from Month 8:
+Using the same log classification task from Month 10:
 
 **Task: Predict log level (INFO / WARNING / ERROR) from cpu, mem, response_time, service**
 
@@ -82,13 +82,13 @@ log-analysis-pipeline/
 
 # Comparison Deliverable
 
-At the end of Month 10 write a documented comparison:
+At the end of Month 12 write a documented comparison:
 
 ```
 docs/model_comparison.md
 ```
 
-Compare logistic regression (Month 8) vs neural network (Month 10):
+Compare logistic regression (Month 10) vs neural network (Month 12):
 - Training time
 - Accuracy, precision, recall, F1
 - Complexity vs performance tradeoff
@@ -98,7 +98,7 @@ Compare logistic regression (Month 8) vs neural network (Month 10):
 
 # Portfolio Finalization
 
-Month 10 closes the roadmap. The final week is dedicated to:
+Month 12 closes the roadmap. The final week is dedicated to:
 
 - Reviewing the entire codebase
 - Cleaning up any technical debt
@@ -110,7 +110,7 @@ Month 10 closes the roadmap. The final week is dedicated to:
 
 # Deliverables
 
-By the end of Month 10 you must have:
+By the end of Month 12 you must have:
 
 - TensorFlow model trained on log data
 - Model saved in SavedModel format

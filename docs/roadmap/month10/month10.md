@@ -1,4 +1,4 @@
-# Month 8 — Classical Machine Learning
+# Month 10 — Classical Machine Learning
 
 ## Primary Goal
 
@@ -91,7 +91,7 @@ This is manual for now. Experiment tracking tools come in Month 9.
 
 # Deliverables
 
-By the end of Month 8 you must have:
+By the end of Month 10 you must have:
 
 - Linear regression model trained and evaluated
 - Logistic regression model trained and evaluated
