@@ -1,76 +1,98 @@
-# Month 6 — Cloud Structure & Automation
+# Month 6 — Analysis and Feature Adaptation
 
 ## Primary Goal
 
-Make the cloud deployment production-grade. Introduce Docker for
-reproducibility, environment separation for safety, and basic monitoring
-to observe the pipeline in production.
+Adapt the analysis, feature engineering, visualization, and
+reporting layers to work with real web server log data. By the
+end of this month, the full pipeline should run end-to-end on
+real logs, producing features, reports, and train/test splits
+relevant to the new domain.
+
+---
+
+# Context
+
+Month 5 delivered a working reader and parser for real web server
+access logs. The pipeline produces a raw DataFrame with new
+columns — IP address, timestamp, HTTP method, endpoint, status
+code, response size, and possibly referer and user agent.
+
+This month adapts everything downstream of the parser: analysis
+validation, feature engineering, visualization, reporting, and
+the statistical pipeline.
 
 ---
 
 # Technical Focus
 
-## Environment Separation
+## Week 1 — Analysis Layer and Visualization
 
-- Local vs cloud environments — why they must be separate
-- Environment variables for configuration
-- Never hardcoding environment-specific values
-- `.env` files for local development
-- AWS Parameter Store or environment variables on EC2 for production
+- Update `_validation_orchestrator()` for new column types and
+  expected values (e.g. status codes: 200, 301, 404, 500)
+- Update `_verify_col_dtype()` for new numeric columns
+  (status code, response size)
+- Update `_verify_col_values()` for new categorical columns
+  (HTTP method: GET, POST, PUT, DELETE)
+- Adapt `get_metric_thresholds()` for new metrics if applicable
+- Update reporting pipeline with relevant distribution and
+  count plots for the new columns
+- Run correlation analysis on the new DataFrame — discover
+  what correlates in real data vs what you designed in
+  synthetic data
 
-## Docker
+## Week 2 — Feature Engineering Redesign
 
-- What Docker is and why it matters for reproducibility
-- Dockerfile structure
-- Building and running images
-- Volumes and bind mounts
-- Docker on EC2
-- The pipeline runs identically locally and in the cloud
+- Design new features relevant to web server logs:
+  - **Status code category:** 2xx (success), 4xx (client error),
+    5xx (server error)
+  - **Is error:** status code >= 400 (or >= 500 depending on
+    definition)
+  - **Hour of day:** same concept, new timestamp format
+  - **Request rate:** requests per time window per IP
+  - **Endpoint frequency:** how often each endpoint is hit
+  - **Response size bucket:** small, medium, large
+- Implement new feature functions following the same pattern:
+  each returns a Series, orchestrator assembles with pd.concat
+- Update config with new feature thresholds
 
-## CloudWatch — Basics
+## Week 3 — Statistical Pipeline and Train/Test Split
 
-- What CloudWatch is
-- Log groups and log streams
-- Sending pipeline logs to CloudWatch
-- Basic alarms — alert when error rate exceeds threshold
+- Update the statistical pipeline for the new feature dataset
+- Identify the new target variable — what will the ML model
+  predict? (e.g. is_error based on status code >= 500)
+- Perform train/test split with appropriate stratification
+- Run descriptive statistics on the new dataset
+- Compare distributions and correlations with synthetic data —
+  document the differences
+- Evaluate: are the new features suitable for ML?
 
-## Reproducible Deployments
+## Week 4 — End-to-End Verification and Documentation
 
-- The pipeline should be deployable from scratch with minimal steps
-- `requirements.txt` is always up to date
-- README has clear deployment instructions
-- Docker ensures environment consistency
+- Run the full pipeline end-to-end: reader → parser → analysis
+  → reporting → features → statistical
+- Verify all outputs: plots, feature dataset, train/test splits
+- Update all design documents for modified modules
+- Write a comparison document: synthetic vs real data pipeline
+- Update README.md with the complete new setup
+- Update tech_debt.md
+- Verify Docker build still works with the new pipeline
 
 ---
 
-# Pipeline Evolution
+# Key Differences: Synthetic vs Real Data
 
-By end of Month 6:
+| Aspect | Synthetic | Real |
+|--------|-----------|------|
+| Format | key=value | Common/Combined Log Format |
+| Fields | cpu, mem, response_time, level | IP, method, endpoint, status, size |
+| Correlations | Designed and known | Discovered through analysis |
+| Data quality | Perfect (by design) | Messy (real world) |
+| Volume | Controlled | Potentially much larger |
+| Feature target | is_error (from level) | is_error (from status code) |
 
-```
-Local:
-  docker build → docker run → pipeline → output/
-
-Cloud:
-  EC2 pulls Docker image → runs pipeline → logs to CloudWatch → output to S3
-```
-
-The same Docker image runs in both environments.
-
----
-
-# Project Structure (Additions This Month)
-
-```
-log-analysis-pipeline/
-│
-├── Dockerfile                         ← formalized this month
-├── docker-compose.yml                 ← new this month (local dev)
-│
-├── docs/
-│   └── deployment.md                  ← new this month
-│   └── monitoring.md                  ← new this month
-```
+This comparison is itself a deliverable — documenting it
+demonstrates understanding of the difference between controlled
+experiments and real-world data engineering.
 
 ---
 
@@ -78,11 +100,14 @@ log-analysis-pipeline/
 
 By the end of Month 6 you must have:
 
-- Dockerized pipeline running locally and on EC2
-- Environment separation implemented
-- Basic CloudWatch monitoring configured
-- Deployment documented step by step in `docs/deployment.md`
-- Docker image builds from scratch without errors
+- Full pipeline running end-to-end on real logs
+- New feature dataset with domain-relevant features
+- Updated reporting pipeline with new visualizations
+- Distribution and correlation analysis on real data
+- Train/test split on the new feature dataset
+- Comparison document: synthetic vs real data
+- All design documents updated
+- Docker build verified
 - Frequent commits
 
 ---
@@ -91,8 +116,9 @@ By the end of Month 6 you must have:
 
 A task is complete when:
 
-- `docker build` succeeds
-- Pipeline runs identically locally and on EC2
-- Logs visible in CloudWatch
-- Documentation updated
+- Code runs on real log data
+- Analysis includes interpretation of real-world patterns
+- Features are documented with ML relevance
+- Changes are documented
 - Commit pushed
+- Results reproducible

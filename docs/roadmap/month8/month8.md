@@ -1,64 +1,61 @@
-# Month 8 — Classical Machine Learning
+# Month 6 — Cloud Structure & Automation
 
 ## Primary Goal
 
-Train the first ML model on the log dataset built across Phases 1 and 2.
-Start with classical algorithms — understand them deeply before moving
-to neural networks.
+Make the cloud deployment production-grade. Introduce Docker for
+reproducibility, environment separation for safety, and basic monitoring
+to observe the pipeline in production.
 
 ---
 
 # Technical Focus
 
-## Linear Regression
+## Environment Separation
 
-- What linear regression is and when to use it
-- Implementing from scratch (gradient descent)
-- Implementing with scikit-learn
-- Predicting `response_time` from `cpu` and `mem`
-- Interpreting coefficients
+- Local vs cloud environments — why they must be separate
+- Environment variables for configuration
+- Never hardcoding environment-specific values
+- `.env` files for local development
+- AWS Parameter Store or environment variables on EC2 for production
 
-## Logistic Regression
+## Docker
 
-- Binary and multiclass classification
-- Predicting log level (INFO / WARNING / ERROR) from metrics
-- Decision boundary interpretation
-- Probability outputs
+- What Docker is and why it matters for reproducibility
+- Dockerfile structure
+- Building and running images
+- Volumes and bind mounts
+- Docker on EC2
+- The pipeline runs identically locally and in the cloud
 
-## Feature Scaling
+## CloudWatch — Basics
 
-- Why scaling matters for gradient-based models
-- StandardScaler and MinMaxScaler
-- When to scale and when not to
-- Scaling the log feature dataset
+- What CloudWatch is
+- Log groups and log streams
+- Sending pipeline logs to CloudWatch
+- Basic alarms — alert when error rate exceeds threshold
 
-## Model Evaluation
+## Reproducible Deployments
 
-- Train/test split (already done in Month 4)
-- Accuracy, precision, recall, F1
-- Confusion matrix
-- When accuracy is misleading
-
-## Overfitting vs Underfitting
-
-- Learning curves
-- Regularization basics (L1, L2)
-- Cross-validation
+- The pipeline should be deployable from scratch with minimal steps
+- `requirements.txt` is always up to date
+- README has clear deployment instructions
+- Docker ensures environment consistency
 
 ---
 
-# ML Objective
+# Pipeline Evolution
 
-Using the feature dataset from Month 3:
+By end of Month 6:
 
-**Task 1 — Regression:**
-Predict `response_time` from `cpu`, `mem`, and service.
+```
+Local:
+  docker build → docker run → pipeline → output/
 
-**Task 2 — Classification:**
-Predict `level` (INFO / WARNING / ERROR) from `cpu`, `mem`, and `response_time`.
+Cloud:
+  EC2 pulls Docker image → runs pipeline → logs to CloudWatch → output to S3
+```
 
-Task 2 is interesting because the generator designed this relationship
-explicitly — the model should be able to learn it.
+The same Docker image runs in both environments.
 
 ---
 
@@ -67,38 +64,25 @@ explicitly — the model should be able to learn it.
 ```
 log-analysis-pipeline/
 │
-├── src/
-│   └── models/
-│       └── train.py              ← new this month
-│       └── evaluate.py           ← new this month
-│
-├── output/
-│   └── models/                   ← new this month
-│       └── logistic_v1.pkl
+├── Dockerfile                         ← formalized this month
+├── docker-compose.yml                 ← new this month (local dev)
 │
 ├── docs/
-│   └── ml_experiment_01.md       ← new this month
+│   └── deployment.md                  ← new this month
+│   └── monitoring.md                  ← new this month
 ```
-
----
-
-# Model Versioning
-
-Models are saved with a version suffix — `logistic_v1.pkl`, `linear_v1.pkl`.
-This is manual for now. Experiment tracking tools come in Month 9.
 
 ---
 
 # Deliverables
 
-By the end of Month 8 you must have:
+By the end of Month 6 you must have:
 
-- Linear regression model trained and evaluated
-- Logistic regression model trained and evaluated
-- Evaluation metrics documented
-- Confusion matrix visualization
-- Models saved to `output/models/`
-- Experiment documented in `docs/ml_experiment_01.md`
+- Dockerized pipeline running locally and on EC2
+- Environment separation implemented
+- Basic CloudWatch monitoring configured
+- Deployment documented step by step in `docs/deployment.md`
+- Docker image builds from scratch without errors
 - Frequent commits
 
 ---
@@ -107,7 +91,8 @@ By the end of Month 8 you must have:
 
 A task is complete when:
 
-- Model trains without errors
-- Evaluation metrics are computed and documented
-- Model artifact is saved
+- `docker build` succeeds
+- Pipeline runs identically locally and on EC2
+- Logs visible in CloudWatch
+- Documentation updated
 - Commit pushed

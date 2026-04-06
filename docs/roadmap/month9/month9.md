@@ -1,96 +1,73 @@
-# Month 9 — Structured ML Pipeline
+# Month 7 — Cloud-Native Thinking
 
 ## Primary Goal
 
-Make the ML workflow reproducible and structured. Move from ad-hoc
-training scripts to a proper ML pipeline with experiment tracking,
-hyperparameter testing, and model management.
+Consolidate cloud skills and refactor the pipeline to follow
+cloud-native principles. By the end of this month the pipeline
+should be portfolio-ready and deployable by anyone from the README.
 
 ---
 
 # Technical Focus
 
-## Reproducible Training
+## Stateless Processing
 
-- Seeds for reproducibility (`random.seed`, `numpy.random.seed`)
-- Config-driven training — hyperparameters in `config.yaml`
-- Same config always produces same model
-- Training logs saved to disk
+- What stateless means and why it matters in the cloud
+- The pipeline should not depend on local state between runs
+- All state lives in S3 — not on the instance
 
-## Experiment Tracking (Manual First)
+## Object Storage Principles
 
-Before using MLflow or similar tools, track experiments manually:
+- S3 as the single source of truth
+- Prefix structure for organized data access
+- Versioning and lifecycle policies
+- Reading directly from S3 without downloading
 
-```
-output/experiments/
-    experiment_001/
-        config.yaml         ← exact config used
-        metrics.json        ← train/test metrics
-        model.pkl           ← saved model
-        notes.md            ← observations
-```
+## Modular Deployments
 
-This builds the intuition for why tools like MLflow exist.
+- Each component of the pipeline should be independently deployable
+- Configuration drives behavior — not code changes
+- Feature flags via config
 
-## Hyperparameter Testing
+## Reproducibility Audit
 
-- What hyperparameters are
-- Grid search with `sklearn.model_selection.GridSearchCV`
-- Recording results across runs
-- Choosing the best model based on metrics
-
-## Saving and Loading Models
-
-- `joblib` for saving sklearn models
-- Loading a model and running inference
-- Model versioning strategy
+Go through the entire project and verify:
+- Anyone can clone the repo and run the pipeline
+- README covers all setup steps
+- No hardcoded paths, credentials, or environment assumptions
+- Docker build works from scratch on a clean machine
 
 ---
 
-# ML Pipeline Evolution
+# Portfolio Preparation
 
-By end of Month 9 the ML workflow looks like this:
+This month the repository becomes portfolio-ready.
 
-```
-config.yaml (hyperparameters)
-    → train.py
-    → model artifact + metrics
-    → output/experiments/<run_id>/
-```
+### README Must Include
+- Project overview
+- Architecture diagram (simple text diagram is fine)
+- Setup instructions
+- How to run locally
+- How to deploy to AWS
+- Technologies used
 
-Each training run is isolated and reproducible.
-
----
-
-# Project Structure (Additions This Month)
-
-```
-log-analysis-pipeline/
-│
-├── output/
-│   └── experiments/
-│       └── run_001/
-│           ├── config.yaml
-│           ├── metrics.json
-│           ├── model.pkl
-│           └── notes.md
-│
-├── docs/
-│   └── experiment_tracking.md    ← new this month
-```
+### Documentation Must Include
+- Design docs for all major modules
+- Architecture decisions
+- Known limitations and future improvements
 
 ---
 
 # Deliverables
 
-By the end of Month 9 you must have:
+By the end of Month 7 you must have:
 
-- Reproducible training pipeline
-- At least 3 documented experiments with different hyperparameters
-- Grid search results compared and documented
-- Best model identified and saved
-- Manual experiment tracking structure in `output/experiments/`
-- Frequent commits
+- Fully stateless cloud pipeline
+- Portfolio-ready repository
+- Complete README
+- All documentation up to date
+- Clean Git history with meaningful commits
+- Pipeline deployable from scratch by following the README
 
 ---
 
@@ -98,7 +75,8 @@ By the end of Month 9 you must have:
 
 A task is complete when:
 
-- Training is reproducible from config alone
-- Experiment results are documented
-- Best model is saved with its config
+- Code runs
+- README instructions work on a clean environment
+- Documentation updated
 - Commit pushed
+- Pipeline is reproducible end to end

@@ -1,73 +1,139 @@
-# Month 7 — Cloud-Native Thinking
+# Month 5 — AWS Core
 
 ## Primary Goal
 
-Consolidate cloud skills and refactor the pipeline to follow
-cloud-native principles. By the end of this month the pipeline
-should be portfolio-ready and deployable by anyone from the README.
+Move the local pipeline to the cloud. Learn the fundamental AWS services
+required to store, process, and manage data in a production environment.
+Introduce databases as a persistence layer for processed data.
 
 ---
 
 # Technical Focus
 
-## Stateless Processing
+## S3 — Object Storage
 
-- What stateless means and why it matters in the cloud
-- The pipeline should not depend on local state between runs
-- All state lives in S3 — not on the instance
+- What object storage is and why it exists
+- Buckets, keys, and prefixes
+- Uploading and downloading files with AWS CLI
+- Uploading and downloading files with `boto3` (Python SDK)
+- S3 bucket structure for the log pipeline
+- Lifecycle policies basics
 
-## Object Storage Principles
+## EC2 — Compute
 
-- S3 as the single source of truth
-- Prefix structure for organized data access
-- Versioning and lifecycle policies
-- Reading directly from S3 without downloading
+- What an EC2 instance is
+- Instance types — choosing the right size
+- SSH into an EC2 instance
+- Running the pipeline on EC2
+- Stopping vs terminating instances
 
-## Modular Deployments
+## IAM — Identity and Access Management
 
-- Each component of the pipeline should be independently deployable
-- Configuration drives behavior — not code changes
-- Feature flags via config
+- Users, roles, and policies
+- Principle of least privilege
+- Creating a role for EC2 to access S3
+- Never hardcoding credentials — environment variables and instance roles
 
-## Reproducibility Audit
+## AWS CLI
 
-Go through the entire project and verify:
-- Anyone can clone the repo and run the pipeline
-- README covers all setup steps
-- No hardcoded paths, credentials, or environment assumptions
-- Docker build works from scratch on a clean machine
+- Installation and configuration
+- `aws s3 cp`, `aws s3 ls`, `aws s3 sync`
+- `aws ec2` basics
+- Profiles for multiple environments
+
+## Databases — Introduction
+
+- SQL fundamentals: CREATE, INSERT, SELECT, WHERE, GROUP BY, JOIN
+- When to use a database vs flat files (CSV) vs object storage (S3)
+- Relational databases: tables, schemas, primary keys, foreign keys
+- AWS RDS basics — managed relational database service
+- DynamoDB basics — when NoSQL makes sense vs relational
+- Connecting to a database from Python using a database driver
+- Persisting the feature dataset to a database instead of only CSV
+- Querying processed data with SQL
+
+The goal is not to become a DBA — it is to understand how data lives
+in production systems and how to read from and write to databases
+from a pipeline. This is a core skill for Data and ML Engineering.
 
 ---
 
-# Portfolio Preparation
+# Pipeline Evolution
 
-This month the repository becomes portfolio-ready.
+By end of Month 5 the pipeline runs in two modes:
 
-### README Must Include
-- Project overview
-- Architecture diagram (simple text diagram is fine)
-- Setup instructions
-- How to run locally
-- How to deploy to AWS
-- Technologies used
+### Local Mode
+```
+log_generator.py → data/raw/ → pipeline → output/datasets/
+```
 
-### Documentation Must Include
-- Design docs for all major modules
-- Architecture decisions
-- Known limitations and future improvements
+### Cloud Mode
+```
+log_generator.py → S3 bucket (raw/) → pipeline on EC2 → S3 bucket (processed/)
+                                                       → RDS (feature dataset)
+```
+
+The code does not change between modes — only the paths and
+configuration change. This is achieved via environment variables.
+
+---
+
+# Project Structure (Additions This Month)
+
+```
+log-analysis-pipeline/
+│
+├── config/
+│   └── config.yaml               ← extended with cloud config section
+│
+├── scripts/
+│   └── deploy_ec2.sh             ← new this month
+│   └── sync_to_s3.sh             ← new this month
+│
+├── docs/
+│   └── aws_setup.md              ← new this month
+│   └── database_design.md        ← new this month
+```
+
+---
+
+# Data Persistence Strategy
+
+By end of Month 5 the pipeline should support multiple persistence
+targets:
+
+- **S3** — raw logs and processed datasets (bulk storage)
+- **RDS** — feature dataset for structured queries (SQL access)
+- **CSV** — local development and quick inspection (already exists)
+
+The decision of where to persist is configuration-driven. The pipeline
+does not hardcode the persistence target.
+
+---
+
+# Security Requirements
+
+- Never commit AWS credentials to Git
+- `.gitignore` must include `.env` and `~/.aws/credentials`
+- Use IAM roles for EC2 access to S3 and RDS — no access keys on the instance
+- Use the principle of least privilege for all IAM policies
+- Database credentials managed via environment variables or AWS Secrets Manager
 
 ---
 
 # Deliverables
 
-By the end of Month 7 you must have:
+By the end of Month 5 you must have:
 
-- Fully stateless cloud pipeline
-- Portfolio-ready repository
-- Complete README
-- All documentation up to date
-- Clean Git history with meaningful commits
-- Pipeline deployable from scratch by following the README
+- Logs stored in S3
+- Pipeline running on EC2
+- IAM role configured correctly
+- No credentials in the codebase
+- Feature dataset persisted to a database
+- Basic SQL queries against the stored data
+- AWS setup documented in `docs/aws_setup.md`
+- Database design documented in `docs/database_design.md`
+- Frequent commits
 
 ---
 
@@ -75,8 +141,8 @@ By the end of Month 7 you must have:
 
 A task is complete when:
 
-- Code runs
-- README instructions work on a clean environment
+- Pipeline runs on EC2
+- Data persists in S3 and database
+- IAM is configured securely
 - Documentation updated
 - Commit pushed
-- Pipeline is reproducible end to end

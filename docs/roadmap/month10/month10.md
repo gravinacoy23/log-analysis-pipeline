@@ -1,63 +1,64 @@
-# Month 10 — Introduction to TensorFlow
+# Month 8 — Classical Machine Learning
 
 ## Primary Goal
 
-Build a simple neural network using TensorFlow. Understand the
-fundamentals — not to become a deep learning researcher, but to
-understand how neural networks work and how to use them in a pipeline.
+Train the first ML model on the log dataset built across Phases 1 and 2.
+Start with classical algorithms — understand them deeply before moving
+to neural networks.
 
 ---
 
 # Technical Focus
 
-## Neural Network Fundamentals
+## Linear Regression
 
-- What a neuron is
-- Layers — input, hidden, output
-- Activation functions — ReLU, sigmoid, softmax
-- Forward pass — how predictions are made
-- Why neural networks can learn non-linear relationships
+- What linear regression is and when to use it
+- Implementing from scratch (gradient descent)
+- Implementing with scikit-learn
+- Predicting `response_time` from `cpu` and `mem`
+- Interpreting coefficients
 
-## Loss Functions
+## Logistic Regression
 
-- What a loss function measures
-- Binary cross-entropy for binary classification
-- Categorical cross-entropy for multiclass
-- Mean squared error for regression
-- How loss guides training
+- Binary and multiclass classification
+- Predicting log level (INFO / WARNING / ERROR) from metrics
+- Decision boundary interpretation
+- Probability outputs
 
-## Gradients and Backpropagation (Conceptual)
+## Feature Scaling
 
-- What a gradient is
-- How backpropagation adjusts weights
-- Learning rate — too high vs too low
-- No need to implement from scratch — understand the concept
+- Why scaling matters for gradient-based models
+- StandardScaler and MinMaxScaler
+- When to scale and when not to
+- Scaling the log feature dataset
 
-## Simple Feedforward Network with TensorFlow
+## Model Evaluation
 
-- `tf.keras.Sequential`
-- Dense layers
-- Compile: optimizer, loss, metrics
-- Fit: epochs, batch size, validation split
-- Evaluate on test set
+- Train/test split (already done in Month 4)
+- Accuracy, precision, recall, F1
+- Confusion matrix
+- When accuracy is misleading
 
-## Model Serialization
+## Overfitting vs Underfitting
 
-- Saving a TensorFlow model with `.save()`
-- Loading and running inference
-- SavedModel format vs H5
+- Learning curves
+- Regularization basics (L1, L2)
+- Cross-validation
 
 ---
 
 # ML Objective
 
-Using the same log classification task from Month 8:
+Using the feature dataset from Month 3:
 
-**Task: Predict log level (INFO / WARNING / ERROR) from cpu, mem, response_time, service**
+**Task 1 — Regression:**
+Predict `response_time` from `cpu`, `mem`, and service.
 
-Build a feedforward neural network and compare results with logistic
-regression from Month 8. The goal is not to beat the classical model —
-it is to understand the process.
+**Task 2 — Classification:**
+Predict `level` (INFO / WARNING / ERROR) from `cpu`, `mem`, and `response_time`.
+
+Task 2 is interesting because the generator designed this relationship
+explicitly — the model should be able to learn it.
 
 ---
 
@@ -68,69 +69,45 @@ log-analysis-pipeline/
 │
 ├── src/
 │   └── models/
-│       └── neural_net.py         ← new this month
+│       └── train.py              ← new this month
+│       └── evaluate.py           ← new this month
 │
 ├── output/
-│   └── models/
-│       └── neural_net_v1/        ← SavedModel format
+│   └── models/                   ← new this month
+│       └── logistic_v1.pkl
 │
 ├── docs/
-│   └── tensorflow_experiment.md  ← new this month
+│   └── ml_experiment_01.md       ← new this month
 ```
 
 ---
 
-# Comparison Deliverable
+# Model Versioning
 
-At the end of Month 10 write a documented comparison:
-
-```
-docs/model_comparison.md
-```
-
-Compare logistic regression (Month 8) vs neural network (Month 10):
-- Training time
-- Accuracy, precision, recall, F1
-- Complexity vs performance tradeoff
-- Which would you use in production and why
-
----
-
-# Portfolio Finalization
-
-Month 10 closes the roadmap. The final week is dedicated to:
-
-- Reviewing the entire codebase
-- Cleaning up any technical debt
-- Ensuring the README covers the full project
-- Ensuring all documentation is current
-- Final commit that marks the project as complete
+Models are saved with a version suffix — `logistic_v1.pkl`, `linear_v1.pkl`.
+This is manual for now. Experiment tracking tools come in Month 9.
 
 ---
 
 # Deliverables
 
-By the end of Month 10 you must have:
+By the end of Month 8 you must have:
 
-- TensorFlow model trained on log data
-- Model saved in SavedModel format
-- Training process documented
-- Comparison with classical ML documented
-- Portfolio-ready repository
-- Final clean commit
+- Linear regression model trained and evaluated
+- Logistic regression model trained and evaluated
+- Evaluation metrics documented
+- Confusion matrix visualization
+- Models saved to `output/models/`
+- Experiment documented in `docs/ml_experiment_01.md`
+- Frequent commits
 
 ---
 
-# Strategic Outcome
+# Definition of Done
 
-After completing this roadmap you will have:
+A task is complete when:
 
-- A real data pipeline built from scratch
-- Experience with the full ML lifecycle
-- Cloud deployment skills (AWS)
-- A professional Git portfolio
-- The foundation to grow into Data Engineering or ML Engineering
-
-The next step after this roadmap is specialization — going deeper into
-one of these areas depending on what you enjoy most and where the
-opportunities are.
+- Model trains without errors
+- Evaluation metrics are computed and documented
+- Model artifact is saved
+- Commit pushed
