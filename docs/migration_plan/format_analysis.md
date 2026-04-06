@@ -251,6 +251,26 @@ parser design.
 - **Malformed request lines:** 10 lines with binary/garbled
   content. Parser should skip and log warning
 
+### Additional Edge Cases (from malformed line analysis)
+
+- **Response size as `-`:** 10 lines have `-` instead of a
+  numeric value in the response size field. All correspond to
+  status 400 (bad request) with malformed request lines. The
+  parser must handle `-` in the response size field — either
+  convert to 0, convert to None, or skip the line. This is
+  separate from response size = `0` which is valid data
+  (redirects, empty responses)
+- **All status 400 lines are malformed:** In this dataset,
+  every 400 status code corresponds to a garbled or binary
+  request line. This means 400 is not a "normal" client error
+  (like a typo in a URL) but a genuinely broken request. This
+  is relevant for defining `is_error` — status 400 in this
+  dataset signals protocol-level failure, not user error
+- **Malformed request patterns:** Three types identified:
+  1. Binary/garbled data in request field (6 lines from 2 IPs)
+  2. Space in endpoint breaking the request structure (1 line)
+  3. Non-ASCII characters in endpoint (1 line)
+
 ---
 
 ## Migration Decisions
