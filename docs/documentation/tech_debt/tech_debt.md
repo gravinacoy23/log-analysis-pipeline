@@ -61,6 +61,9 @@ or logs from a specific date, without loading everything into memory first.
 
 **Target:** Month 3 — aligns with time-series handling and cron automation.
 
+**Status** [Completed]
+Added encoding parameter to ignore chars.
+
 ---
 
 ### 🔵 Add encoding parameter for flexibility
@@ -141,20 +144,6 @@ would make the module more reusable in future projects.
 ---
 
 ## Run Pipeline
-
----
-
-### 🟡 Accept a list of services and run the pipeline for each
-
-**Current behavior**
-The pipeline processes one service per execution. To analyze the full system,
-the user must run `main.py` three times.
-
-**Why it matters**
-Supporting a list of services would allow a single execution to process all
-services and return consolidated results.
-
-**Target:** Month 1 (Week 3–4) — coordinate with reader and main.py improvements.
 
 ---
 
@@ -375,20 +364,6 @@ environment-specific configuration — the standard for production Python applic
 
 **Target:** Month 6 — when the pipeline is deployed to the cloud and production-grade
 logging is required.
-
----
-
-### 🟡 Support running multiple services in a single execution
-
-**Current behavior**
-`main.py` accepts a single service name via `--service`.
-
-**Why it matters**
-Adding support for multiple services (e.g. `--service booking pricing`) would
-allow the user to run the full pipeline in one command.
-
-**Target:** Month 1 (Week 3–4) — implement together with the reader and pipeline
-improvements above. These three items are coordinated and should be tackled as a unit.
 
 ---
 
