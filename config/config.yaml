@@ -4,43 +4,6 @@ paths:
   raw_log: data/raw/access_logs/
   output_dir: output/
 
-log_format:
-  timestamp_format: "%Y-%m-%dT%H:%M:%SZ"
-
-analysis:
-  error_keywords:
-    - ERROR
-    - WARNING
-    - CRITICAL
-
-output:
-  save_summary: true
-  save_errors: true
-
-service:
-  - shopping
-  - pricing
-  - booking
-
-messages:
-  shopping:
-   - "FareSearch completed"
-   - "AirShopping completed"
-   - "No fares available"
-  pricing:
-    - "OfferPrice completed"
-    - "Dynamic price applied"
-    - "Fare rules evaluated"
-  booking:
-    - "Booking confirmed"
-    - "Booking failed"
-    - "Seat booked"
-
-level:
-  - INFO
-  - WARNING
-  - ERROR
-
 columns:
   host: str
   identity: str
