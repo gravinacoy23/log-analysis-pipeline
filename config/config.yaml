@@ -1,7 +1,7 @@
 # Log Analysis Pipeline Configuration
 
 paths:
-  raw_log: data/raw/
+  raw_log: data/raw/access_logs/
   output_dir: output/
 
 log_format:
