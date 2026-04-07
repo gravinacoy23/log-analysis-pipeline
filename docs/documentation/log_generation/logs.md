@@ -1,7 +1,15 @@
-Log Format Specification
+# Log Format Specification
 
-Each log line must follow this structure:
+Each log line follows the Common Log Format (CLF):
 
-timestamp=<timestamp>service=<service_name>user=<id> cpu=<value> mem=<value> response_time=<ms> level=<LEVEL> msg="<message>"
+```
+host identity user [timestamp] "request" status size
+```
 
-timestamp=2026-03-02T18:23:11Z service=pricing-service user=42 cpu=73 mem=68 response=842 level=INFO msg="Price calculation completed"
+Example:
+
+```
+ppptky455.asahi-net.or.jp - - [01/Aug/1995:06:10:01 -0400] "GET /images/WORLD-logosmall.gif HTTP/1.0" 200 669
+```
+
+Field details documented in `docs/migration_plan/format_analysis.md`.
