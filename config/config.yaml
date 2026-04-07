@@ -42,14 +42,15 @@ level:
   - ERROR
 
 columns:
+  host: str
+  identity: str
+  user: str
   timestamp: datetime.datetime
-  service: str
-  user: int
-  cpu: int
-  mem: int
-  response_time: int
-  level: str
-  msg: str
+  method: str
+  endpoint: str
+  protocol: str
+  http_response: str
+  response_size: int
 
 metric_thresholds:
   cpu:
