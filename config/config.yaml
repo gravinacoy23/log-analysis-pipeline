@@ -11,7 +11,7 @@ columns:
   timestamp: datetime.datetime
   method: str
   endpoint: str
-  protocol: str
+  protocol_version: str
   http_response: int
   response_size: int
 
@@ -20,7 +20,7 @@ expected_values:
     - GET
     - POST
     - HEAD
-  protocol:
+  protocol_version:
     - HTTP/1.0
     - HTTP/V1.0
   http_response:
