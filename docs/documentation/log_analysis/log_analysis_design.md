@@ -155,11 +155,13 @@ responsibility and operates at a specific level.
 - Iterates over `expected_values` keys
 - For `http_response`: delegates to `_verify_response_field()`
   which validates the value falls within the configured range
+- For `protocol` with `None` value: skips validation via
+  `continue` — `None` represents a legitimately absent protocol
+  (request lines without HTTP version), not invalid content
 - For all other columns: checks if the value is in the list of
   valid values
-- Uses `elif` to ensure only one validation path executes per
-  column — prevents the list-based check from running on
-  `http_response`
+- Uses `elif` chain to ensure only one validation path executes
+  per column
 - Returns `False` on first failure
 - Logs a warning identifying the column, the unexpected value,
   and the line number
@@ -171,10 +173,24 @@ responsibility and operates at a specific level.
   separate function keeps the validation logic clean and avoids
   special-casing inside the list-check logic.
 
+- **`protocol` with `None` skipped via `continue`.** The parser
+  sets protocol to `None` when the request line lacks an HTTP
+  version — this is a valid, intentional decision to preserve
+  the method and endpoint data. `None` cannot be represented
+  cleanly in YAML config as an expected value, and it is not
+  an "expected value" in the same sense as `HTTP/1.0` — it is
+  the absence of a value. Skipping validation for `None`
+  protocol is the cleanest approach: the parser already decided
+  the line is valid, and the analysis layer respects that
+  decision. `None` becomes `NaN` in the DataFrame, which pandas
+  handles natively with `.isna()`, `.fillna()`, `.dropna()`.
+
 - **`elif` for mutual exclusivity.** When `column == "http_response"`,
-  the range check runs. For all other columns, the list check runs.
-  Using `elif` prevents both checks from executing on the same
-  column — a bug that was caught and fixed during implementation.
+  the range check runs. When `column == "protocol"` and value is
+  `None`, validation is skipped. For all other columns, the list
+  check runs. The `elif` chain prevents multiple checks from
+  executing on the same column — a bug that was caught and fixed
+  during implementation.
 
 ---
 
@@ -299,9 +315,12 @@ branch.
 - Added `_verify_response_field()` — validates `http_response`
   against a numeric range from config instead of a list of
   values
-- `_verify_col_values()` updated to delegate `http_response`
-  validation to `_verify_response_field()` using `if/elif`
-  for mutual exclusivity
+- `_verify_col_values()` updated with `elif` chain handling
+  three validation paths: range-based for `http_response`,
+  `None` skip for `protocol`, list-based for all other columns
+- `protocol` with `None` value skipped in validation — `None`
+  represents legitimately absent HTTP version, not invalid
+  content. Parser already decided the line is valid.
 - `expected_values` in config now supports both list-based
   validation (method, protocol) and range-based validation
   (http_response)
