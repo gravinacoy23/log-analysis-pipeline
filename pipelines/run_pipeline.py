@@ -1,7 +1,7 @@
 from typing import Any
 from src.ingestion.log_reader import load_all_logs
 from src.processing.log_parser import parse_logs
-from src.analysis.log_analysis import convert_to_dataframe, get_metric_thresholds
+from src.analysis.log_analysis import convert_to_dataframe
 import pandas as pd
 
 

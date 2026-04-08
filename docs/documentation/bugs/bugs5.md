@@ -193,7 +193,9 @@ Unused imports are noise. Pyright may flag it as well.
 **What to do:**
 Remove `get_metric_thresholds` from the import statement.
 
-**Status** [ ]
+**Status** [Completed]
+
+Removed unused import
 
 ---
 
