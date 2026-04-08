@@ -65,7 +65,9 @@ for committed code.
 **What to do:**
 Remove the `print(logs_dataframe)` line.
 
-**Status** [ ]
+**Status** [Completed]
+
+Deleted print.
 
 ---
 

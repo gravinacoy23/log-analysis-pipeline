@@ -26,6 +26,5 @@ def run_pipeline(raw_data: dict[str, Any]) -> pd.DataFrame:
     logs_dataframe = convert_to_dataframe(
         parsed_logs, expected_columns, expected_values
     )
-    print(logs_dataframe)
 
     return logs_dataframe
