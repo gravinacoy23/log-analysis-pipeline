@@ -95,7 +95,9 @@ anyone reading the code.
 **What to do:**
 Remove the `service` line from the Args section.
 
-**Status** [ ]
+**Status** [Completed]
+
+Removed the deprecated parameter
 
 ---
 

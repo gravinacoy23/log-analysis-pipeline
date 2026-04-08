@@ -10,7 +10,6 @@ def run_pipeline(raw_data: dict[str, Any]) -> pd.DataFrame:
     them to a pandas dataframe.
 
     Args:
-        service: name of the service to process.
         raw_data: raw data loaded from the config file.
 
     Returns:
