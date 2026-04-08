@@ -108,12 +108,19 @@ def _parse_request_line(split_log_line: tuple[str | Any, ...]) -> tuple[str]:
 
     if len(request_line_clean) < 3:
         request_line_clean.append(None)
-    elif len(request_line_clean) > 3:
-        request_line_clean = [
-            request_line_clean[0],
-            "".join(request_line_clean[1:-1]),
-            request_line_clean[-1],
-        ]
+    elif len(request_line_clean) >= 3:
+        if request_line_clean[-1].startswith("HTTP/"):
+            request_line_clean = [
+                request_line_clean[0],
+                "".join(request_line_clean[1:-1]),
+                request_line_clean[-1],
+            ]
+        else:
+            request_line_clean = [
+                request_line_clean[0],
+                "".join(request_line_clean[1:]),
+                None,
+            ]
 
     return (
         *split_log_line[:4],
