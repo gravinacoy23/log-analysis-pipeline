@@ -136,6 +136,8 @@ Captures 7 groups from Common Log Format:
 - Field-specific processing:
   - **`response_size`:** converts to `int` if digit, converts
     `-` to `0`, rejects anything else as malformed
+  - **`http_response`:** converts to `int` if digit, rejects
+    anything else as malformed
   - **`timestamp`:** converts to `datetime` using `strptime`
     with format `%d/%b/%Y:%H:%M:%S %z`
   - **`protocol`:** allowed to be `None` (some request lines
@@ -156,6 +158,12 @@ Captures 7 groups from Common Log Format:
   some error responses. `0` represents the same meaning as a
   numeric value suitable for DataFrame operations. This is a
   representation of reality, not fabricated data.
+
+- **`http_response` converted to `int`.** Status codes are
+  numeric values needed for range comparisons (e.g. filtering
+  `>= 400`, defining `is_error`). Converting in the parser
+  keeps the analysis layer clean — it receives the correct
+  type directly.
 
 - **`protocol` allowed as `None`.** Some request lines in the
   NASA dataset contain only method and endpoint without an
@@ -307,25 +315,12 @@ branch.
   protocol and spaces in endpoints
 - `_parse_fields()` rewritten — uses `zip()` for field-to-column
   mapping, field-specific conversion for timestamp, response
-  size, and protocol
+  size, http_response, and protocol
+- `http_response` converted to `int` in parser — enables
+  numeric range validation in analysis layer
 - Guard clause added in `parse_logs()` for `None` regex match
 - `_verify_columns()` and `_skip_report()` unchanged — generic
   functions that work across formats
-
----
-
-## Tech Debt
-
-### Status code parsed as string
-
-**Current behavior:** The regex captures status code as a string
-and it remains a string in the dict. Numeric operations
-(filtering `>= 400`, grouping by category) require conversion
-to `int`.
-
-**Decision needed:** Convert in the parser (format layer) or in
-the analysis layer (content layer). To be resolved in Day 3 of
-Sprint 10 when updating the analysis config.
 
 ---
 
