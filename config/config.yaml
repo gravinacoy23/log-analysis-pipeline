@@ -12,8 +12,19 @@ columns:
   method: str
   endpoint: str
   protocol: str
-  http_response: str
+  http_response: int
   response_size: int
+
+expected_values:
+  method:
+    - GET
+    - POST
+    - HEAD
+  protocol:
+    - HTTP/1.0
+  http_response:
+    - 100
+    - 599
 
 metric_thresholds:
   cpu:
