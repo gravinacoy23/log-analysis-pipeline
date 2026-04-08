@@ -16,11 +16,9 @@ def load_config() -> dict[str, Any]:
     config_file = parent_path / "config" / "config.yaml"
 
     required_keys = [
-        "service",
-        "level",
+        "paths",
         "columns",
-        "metric_thresholds",
-        "feature_thresholds",
+        "expected_values",
     ]
 
     with config_file.open("r") as f:
