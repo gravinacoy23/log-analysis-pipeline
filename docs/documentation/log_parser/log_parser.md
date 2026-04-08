@@ -194,25 +194,47 @@ Captures 7 groups from Common Log Format:
 
 - Splits the request group (index 4) by spaces
 - Filters empty strings from the split result
-- Handles three cases:
+- Handles two cases:
   - **< 3 parts:** appends `None` for missing protocol
-  - **> 3 parts:** joins middle elements as a single endpoint
-    (handles spaces in URLs)
-  - **Exactly 3 parts:** no adjustment needed
+  - **>= 3 parts:** checks if the last element starts with
+    `HTTP/` to determine if it is a protocol or part of the
+    endpoint:
+    - If last element starts with `HTTP/`: treats it as
+      protocol, joins middle elements as endpoint
+    - If last element does not start with `HTTP/`: joins all
+      elements after method as endpoint, sets protocol to `None`
 - Reassembles the full tuple: fields 0–3 + expanded request
   + fields 5–6
 
 ### Design Decisions
 
+- **`HTTP/` prefix check for protocol detection.** The NASA
+  dataset contains request lines where spaces in the endpoint
+  produce 3+ parts but no protocol is present. Simply taking
+  the last element as protocol would assign endpoint fragments
+  as the protocol value. Checking for the `HTTP/` prefix
+  distinguishes real protocols from endpoint fragments without
+  requiring config or external data.
+
+- **`>= 3` instead of separate `== 3` and `> 3` branches.**
+  Originally `== 3` was treated as the "normal" case requiring
+  no adjustment, and `> 3` handled spaces in endpoints. However,
+  some lines have exactly 3 parts where the last part is not a
+  protocol (e.g. `"GET /path/page.html>Link</a>, a"` splits
+  into 3 parts but `a` is not a protocol). Using `>= 3` with
+  the `HTTP/` check handles both cases uniformly. For the normal
+  case `["GET", "/path", "HTTP/1.0"]`, the check passes and
+  `join` of a single-element list produces the element unchanged
+  — no performance or correctness impact.
+
 - **Handles spaces in endpoints.** Some NASA log entries have
   spaces within the URL path. Rather than skipping these lines,
-  the first element is treated as method, the last as protocol,
-  and everything in between is joined as the endpoint. This
-  preserves data that would otherwise be lost.
+  the first element is treated as method, and everything between
+  method and protocol (or everything after method if no protocol)
+  is joined as the endpoint.
 
-- **`None` for missing protocol.** When the request line
-  contains only 2 parts (method and endpoint), `None` is
-  appended rather than skipping the line. The method and
+- **`None` for missing protocol.** When the request line lacks
+  a valid HTTP protocol, `None` is appended. The method and
   endpoint are still valid and useful for analysis.
 
 - **Produces a flat tuple.** The caller (`_parse_fields`)
@@ -281,10 +303,12 @@ Captures 7 groups from Common Log Format:
 |---|---|---|
 | Completely malformed (no regex match) | ~2 | Skipped by `parse_logs` guard clause |
 | Missing endpoint (request line has < 2 parts) | 6 | Skipped by `_parse_fields` empty-value guard |
-| Missing protocol (request line has 2 parts) | ~1400 | `None` appended, becomes `NaN` in DataFrame |
-| Spaces in endpoint (request line has > 3 parts) | ~11 | Middle elements joined as single endpoint |
+| Missing protocol (request line has < 3 parts) | ~1400 | `None` appended, becomes `NaN` in DataFrame |
+| Missing protocol (request line has >= 3 parts, last element is not `HTTP/`) | ~few | Last element joined into endpoint, protocol set to `None` |
+| Spaces in endpoint with protocol present | ~11 | Middle elements joined as single endpoint |
+| Spaces in endpoint without protocol | ~few | All elements after method joined as endpoint, protocol `None` |
 | Response size is `-` | ~10 | Converted to `0` |
-| Binary/garbled request data with valid structure | 2 | Passes parser — content validation deferred to analysis layer (status 400 filter) |
+| Binary/garbled request data with valid structure | 2 | Passes parser — content validation deferred to analysis layer (method not in expected values) |
 | Non-UTF-8 bytes | ~few | Dropped by reader (`errors="ignore"`), parser sees cleaned line |
 | **Total skipped** | **8** | **0.0005% skip rate** |
 
@@ -311,8 +335,12 @@ branch.
 - Regex-based parsing replaces `key=value` string splitting
 - `re.compile()` used for pattern compilation before the loop
 - Added `_parse_request_line()` — splits request group into
-  method, endpoint, and protocol with handling for missing
-  protocol and spaces in endpoints
+  method, endpoint, and protocol with `HTTP/` prefix detection
+  for distinguishing protocol from endpoint fragments
+- `_parse_request_line()` uses `>= 3` branch with `HTTP/` check
+  instead of separate `== 3` and `> 3` branches — handles
+  edge case where exactly 3 parts are present but last part
+  is not a protocol
 - `_parse_fields()` rewritten — uses `zip()` for field-to-column
   mapping, field-specific conversion for timestamp, response
   size, http_response, and protocol
