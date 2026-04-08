@@ -176,20 +176,6 @@ def convert_corr_matrix(logs_dataframe: pd.DataFrame) -> pd.DataFrame:
     return numeric_cols.corr("pearson")
 
 
-def filter_loglevel(logs_dataframe: pd.DataFrame, level: str) -> pd.DataFrame:
-    """Filters all the logs that match the input level.
-
-    Args:
-        logs_dataframe: DF of parsed logs.
-        level: level of the log.
-
-    Returns:
-        A new DF with the selected log level
-    """
-
-    return logs_dataframe.loc[logs_dataframe["level"] == level]
-
-
 def select_col(
     logs_dataframe: pd.DataFrame, column_name: str
 ) -> pd.DataFrame | pd.Series:

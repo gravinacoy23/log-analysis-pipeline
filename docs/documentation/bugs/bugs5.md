@@ -117,7 +117,9 @@ would raise a `KeyError`.
 **What to do:**
 Remove the function. It is preserved in git history on `main`.
 
-**Status** [ ]
+**Status** [Completed]
+
+Removing deprecated function
 
 ---
 
