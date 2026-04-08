@@ -84,6 +84,7 @@ def _parse_fields(
                 log_dict[col_title] = int(item)
             else:
                 logger.warning(f"Malformed line skipped at line {line_number}")
+                return None
 
         elif col_title == "timestamp":
             log_dict[col_title] = datetime.strptime(item, "%d/%b/%Y:%H:%M:%S %z")

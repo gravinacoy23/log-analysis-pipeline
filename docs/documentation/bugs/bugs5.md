@@ -45,7 +45,9 @@ returns `None`.
 **What to do:**
 Add `return None` after the logger warning.
 
-**Status** [ ]
+**Status** [Completed]
+
+Added missing return statement
 
 ---
 
