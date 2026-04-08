@@ -143,7 +143,9 @@ docstring convention.
 **What to do:**
 Add `expected_columns` to the Args section of the docstring.
 
-**Status** [ ]
+**Status** [Completed]
+
+Added missing Arg to the docstring with description.
 
 ---
 

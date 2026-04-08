@@ -58,6 +58,7 @@ def _parse_fields(
     Args:
         split_log_line: Log line constructed with the match of the regex.
         line_number: Current line number.
+        expected_columns: Defined in the config file for validation.
 
     Returns:
         Line parsed in a dict mapped to each value to corresponding column name.
