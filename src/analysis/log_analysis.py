@@ -123,7 +123,7 @@ def _verify_col_dtype(
 
 
 def _verify_col_values(
-    log_line: dict[str, Any], expected_values: dict[str, list[str]], line_number: int
+    log_line: dict[str, Any], expected_values: dict[str, list[Any]], line_number: int
 ) -> bool:
     """Verifies that the given columns had the corresponding expected values.
 
@@ -153,7 +153,20 @@ def _verify_col_values(
     return True
 
 
-def _verify_response_field(value, value_range, line_number):
+def _verify_response_field(
+    value: int, value_range: list[int], line_number: int
+) -> bool:
+    """Validates that the http response is in a valid range.
+
+    Args:
+        value: HTTP response
+        value_range: valid ranges defined in the config file
+        line_number: Current log
+
+    Returns:
+        Whether the line value is in a valid range.
+    """
+
     if value not in range(value_range[0], value_range[1]):
         logger.warning(
             f"The column http_response, contains an unexpected value {value} at line {line_number}"

@@ -169,7 +169,9 @@ Google-style docstrings on all functions.
 Add type hints and a docstring following the same pattern as
 the other validation functions.
 
-**Status** [ ]
+**Status** [Completed]
+
+Added typehints and docstrings
 
 ---
 
