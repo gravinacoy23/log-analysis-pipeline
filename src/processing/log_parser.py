@@ -67,7 +67,7 @@ def _parse_fields(
     new_split_line = _parse_request_line(split_log_line)
 
     for item, col_title in zip(new_split_line, expected_columns):
-        if not item and col_title != "protocol":
+        if not item and col_title != "protocol_version":
             logger.warning(f"Missing value for {col_title} at line {line_number}")
             return None
 

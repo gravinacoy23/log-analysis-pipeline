@@ -129,7 +129,7 @@ Captures 7 groups from Common Log Format:
 ### Implementation Details
 
 - Calls `_parse_request_line()` to expand the request group
-  into method, endpoint, and protocol — producing a flat
+  into method, endpoint, and protocol_version — producing a flat
   tuple of 9 values from the original 7
 - Uses `zip(values, column_names)` to map each value to its
   corresponding column name in a single pass
@@ -140,11 +140,11 @@ Captures 7 groups from Common Log Format:
     anything else as malformed
   - **`timestamp`:** converts to `datetime` using `strptime`
     with format `%d/%b/%Y:%H:%M:%S %z`
-  - **`protocol`:** allowed to be `None` (some request lines
+  - **`protocol_version`:** allowed to be `None` (some request lines
     lack HTTP version) — skipped by the empty-value guard
   - **All other fields:** stored as strings
 - Guard clause: if a value is empty and the field is not
-  `protocol`, the line is skipped with a warning
+  `protocol_version`, the line is skipped with a warning
 
 ### Design Decisions
 
@@ -165,7 +165,7 @@ Captures 7 groups from Common Log Format:
   keeps the analysis layer clean — it receives the correct
   type directly.
 
-- **`protocol` allowed as `None`.** Some request lines in the
+- **`protocol_version` allowed as `None`.** Some request lines in the
   NASA dataset contain only method and endpoint without an
   HTTP version. The method and endpoint are still valuable for
   analysis. `None` becomes `NaN` in the DataFrame, which pandas
@@ -187,7 +187,7 @@ Captures 7 groups from Common Log Format:
 ### Returns
 
 - `tuple[str]` — flat tuple with the request line expanded
-  into method, endpoint, and protocol, replacing the original
+  into method, endpoint, and protocol_version, replacing the original
   single request group
 
 ### Implementation Details
@@ -195,33 +195,33 @@ Captures 7 groups from Common Log Format:
 - Splits the request group (index 4) by spaces
 - Filters empty strings from the split result
 - Handles two cases:
-  - **< 3 parts:** appends `None` for missing protocol
+  - **< 3 parts:** appends `None` for missing protocol_version
   - **>= 3 parts:** checks if the last element starts with
-    `HTTP/` to determine if it is a protocol or part of the
+    `HTTP/` to determine if it is a protocol_version or part of the
     endpoint:
     - If last element starts with `HTTP/`: treats it as
-      protocol, joins middle elements as endpoint
+      protocol_version, joins middle elements as endpoint
     - If last element does not start with `HTTP/`: joins all
-      elements after method as endpoint, sets protocol to `None`
+      elements after method as endpoint, sets protocol_version to `None`
 - Reassembles the full tuple: fields 0–3 + expanded request
   + fields 5–6
 
 ### Design Decisions
 
-- **`HTTP/` prefix check for protocol detection.** The NASA
+- **`HTTP/` prefix check for protocol_version detection.** The NASA
   dataset contains request lines where spaces in the endpoint
-  produce 3+ parts but no protocol is present. Simply taking
-  the last element as protocol would assign endpoint fragments
-  as the protocol value. Checking for the `HTTP/` prefix
-  distinguishes real protocols from endpoint fragments without
+  produce 3+ parts but no protocol_version is present. Simply taking
+  the last element as protocol_version would assign endpoint fragments
+  as the protocol_version value. Checking for the `HTTP/` prefix
+  distinguishes real protocol_versions from endpoint fragments without
   requiring config or external data.
 
 - **`>= 3` instead of separate `== 3` and `> 3` branches.**
   Originally `== 3` was treated as the "normal" case requiring
   no adjustment, and `> 3` handled spaces in endpoints. However,
   some lines have exactly 3 parts where the last part is not a
-  protocol (e.g. `"GET /path/page.html>Link</a>, a"` splits
-  into 3 parts but `a` is not a protocol). Using `>= 3` with
+  protocol_version (e.g. `"GET /path/page.html>Link</a>, a"` splits
+  into 3 parts but `a` is not a protocol_version). Using `>= 3` with
   the `HTTP/` check handles both cases uniformly. For the normal
   case `["GET", "/path", "HTTP/1.0"]`, the check passes and
   `join` of a single-element list produces the element unchanged
@@ -230,11 +230,11 @@ Captures 7 groups from Common Log Format:
 - **Handles spaces in endpoints.** Some NASA log entries have
   spaces within the URL path. Rather than skipping these lines,
   the first element is treated as method, and everything between
-  method and protocol (or everything after method if no protocol)
+  method and protocol_version (or everything after method if no protocol_version)
   is joined as the endpoint.
 
-- **`None` for missing protocol.** When the request line lacks
-  a valid HTTP protocol, `None` is appended. The method and
+- **`None` for missing protocol_version.** When the request line lacks
+  a valid HTTP protocol_version, `None` is appended. The method and
   endpoint are still valid and useful for analysis.
 
 - **Produces a flat tuple.** The caller (`_parse_fields`)
@@ -303,10 +303,10 @@ Captures 7 groups from Common Log Format:
 |---|---|---|
 | Completely malformed (no regex match) | ~2 | Skipped by `parse_logs` guard clause |
 | Missing endpoint (request line has < 2 parts) | 6 | Skipped by `_parse_fields` empty-value guard |
-| Missing protocol (request line has < 3 parts) | ~1400 | `None` appended, becomes `NaN` in DataFrame |
-| Missing protocol (request line has >= 3 parts, last element is not `HTTP/`) | ~few | Last element joined into endpoint, protocol set to `None` |
-| Spaces in endpoint with protocol present | ~11 | Middle elements joined as single endpoint |
-| Spaces in endpoint without protocol | ~few | All elements after method joined as endpoint, protocol `None` |
+| Missing protocol_version (request line has < 3 parts) | ~1400 | `None` appended, becomes `NaN` in DataFrame |
+| Missing protocol_version (request line has >= 3 parts, last element is not `HTTP/`) | ~few | Last element joined into endpoint, protocol_version set to `None` |
+| Spaces in endpoint with protocol_version present | ~11 | Middle elements joined as single endpoint |
+| Spaces in endpoint without protocol_version | ~few | All elements after method joined as endpoint, protocol_version `None` |
 | Response size is `-` | ~10 | Converted to `0` |
 | Binary/garbled request data with valid structure | 2 | Passes parser — content validation deferred to analysis layer (method not in expected values) |
 | Non-UTF-8 bytes | ~few | Dropped by reader (`errors="ignore"`), parser sees cleaned line |
@@ -335,15 +335,15 @@ branch.
 - Regex-based parsing replaces `key=value` string splitting
 - `re.compile()` used for pattern compilation before the loop
 - Added `_parse_request_line()` — splits request group into
-  method, endpoint, and protocol with `HTTP/` prefix detection
-  for distinguishing protocol from endpoint fragments
+  method, endpoint, and protocol_version with `HTTP/` prefix detection
+  for distinguishing protocol_version from endpoint fragments
 - `_parse_request_line()` uses `>= 3` branch with `HTTP/` check
   instead of separate `== 3` and `> 3` branches — handles
   edge case where exactly 3 parts are present but last part
-  is not a protocol
+  is not a protocol_version
 - `_parse_fields()` rewritten — uses `zip()` for field-to-column
   mapping, field-specific conversion for timestamp, response
-  size, http_response, and protocol
+  size, http_response, and protocol_version
 - `http_response` converted to `int` in parser — enables
   numeric range validation in analysis layer
 - Guard clause added in `parse_logs()` for `None` regex match
