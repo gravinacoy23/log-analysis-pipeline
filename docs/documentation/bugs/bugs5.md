@@ -223,7 +223,9 @@ parameters have explicit type hints.
 **What to do:**
 Add `list[str]` type hint to `expected_columns`.
 
-**Status** [ ]
+**Status** [Completed]
+
+Added missing typehint
 
 ---
 

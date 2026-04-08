@@ -51,7 +51,7 @@ def parse_logs(
 
 
 def _parse_fields(
-    split_log_line: tuple[str | Any, ...], line_number: int, expected_columns
+    split_log_line: tuple[str | Any, ...], line_number: int, expected_columns: list[str]
 ) -> dict[str, Any] | None:
     """Parses all the fields of the log line.
 
