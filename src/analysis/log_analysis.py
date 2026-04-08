@@ -142,7 +142,7 @@ def _verify_col_values(
                 log_line["http_response"], expected_values["http_response"], line_number
             ):
                 return False
-        elif column == "protocol" and log_line[column] is None:
+        elif column == "protocol_version" and log_line[column] is None:
             continue
         elif log_line[column] not in expected_values[column]:
             logger.warning(
