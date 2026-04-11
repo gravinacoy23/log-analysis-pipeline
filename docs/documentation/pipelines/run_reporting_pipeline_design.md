@@ -1,4 +1,4 @@
-# Run Reporting Pipeline — Design (v3)
+# Run Reporting Pipeline — Design (v4)
 
 ## Objective
 
@@ -78,13 +78,11 @@ pipelines/run_reporting_pipeline.py
 
 ```
 1. _make_output_directory()                     → Path
-2. _count_report(df, "level")                   → {filename: Figure}
-3. _count_report(df, "service")                 → {filename: Figure}
+2. _count_report(df, "method")                  → {filename: Figure}
+3. _count_report(df, "http_response")           → {filename: Figure}
 4. _corr_report(df)                             → {filename: Figure}
-5. _dist_report(df, "response_time")            → {filename: Figure}
-6. _dist_report(df, "cpu")                      → {filename: Figure}
-7. _dist_report(df, "mem")                      → {filename: Figure}
-8. for each figure → figure.savefig(path)       → output/plots/
+5. _dist_report(df, "response_size")            → {filename: Figure}
+6. for each figure → figure.savefig(path)       → output/plots/
 ```
 
 ### Design Decisions
@@ -97,7 +95,7 @@ pipelines/run_reporting_pipeline.py
 
 - **Runs all reports every time.** The orchestrator calls all report
   functions unconditionally. Selective report execution is deferred
-  to future work — the current set of 6 reports is small enough
+  to future work — the current set of 4 reports is small enough
   that running all of them is acceptable.
 
 - **One save loop instead of saving in each function.** Persistence
@@ -130,8 +128,8 @@ pipelines/run_reporting_pipeline.py
 ### Design Decisions
 
 - **Dynamic filename from metric name.** The function is called
-  multiple times with different metrics (level, service). A hardcoded
-  filename would cause the second call to overwrite the first.
+  multiple times with different metrics. A hardcoded filename would
+  cause the second call to overwrite the first.
 
 ---
 
@@ -182,18 +180,20 @@ pipelines/run_reporting_pipeline.py
 
 ---
 
-## Changes from v2
+## Changes from v3
 
-- Function renamed from `report_pipeline()` to
-  `run_report_pipeline()` — consistent naming with other pipeline
-  functions (`run_pipeline`, `run_features_pipeline`,
-  `run_statistical_pipeline`)
-- Added distribution reports for `cpu` and `mem` — two additional
-  calls to `_dist_report()`, reusing the existing function with
-  different column names
-- Pipeline flow updated to reflect 6 reports instead of 4
-- "Expand metric combinations" tech debt item resolved by adding
-  cpu and mem distribution plots
+- Report calls updated for CLF migration: synthetic column names
+  replaced with real log columns
+- `_count_report(df, "level")` → `_count_report(df, "method")` —
+  HTTP method is the new categorical column worth counting
+  (GET/POST/HEAD distribution)
+- `_count_report(df, "service")` → `_count_report(df, "http_response")`
+  — status code distribution replaces service distribution
+- `_dist_report(df, "response_time")` → `_dist_report(df, "response_size")`
+  — response size is the new continuous numeric column
+- `_dist_report(df, "cpu")` and `_dist_report(df, "mem")` removed —
+  these columns do not exist in CLF data
+- Pipeline flow reduced from 6 reports to 4
 
 ---
 
@@ -203,4 +203,4 @@ pipelines/run_reporting_pipeline.py
   reports to generate instead of running all unconditionally
 - Accept output path as a parameter for flexibility
 - Add a summary or metadata file alongside the plots (report date,
-  service analyzed, record count)
+  dataset analyzed, record count)
