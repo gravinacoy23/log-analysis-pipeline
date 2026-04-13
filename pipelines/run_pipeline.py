@@ -1,7 +1,7 @@
 from typing import Any
 from src.ingestion.log_reader import load_all_logs
 from src.processing.log_parser import parse_logs
-from src.analysis.log_analysis import convert_to_dataframe
+from src.analysis.log_analysis import convert_to_dataframe, get_metric_thresholds
 import pandas as pd
 
 
@@ -24,6 +24,10 @@ def run_pipeline(raw_data: dict[str, Any]) -> pd.DataFrame:
 
     logs_dataframe = convert_to_dataframe(
         parsed_logs, expected_columns, expected_values
+    )
+
+    get_metric_thresholds(
+        logs_dataframe, "response_size", raw_data["metric_thresholds"]
     )
 
     return logs_dataframe

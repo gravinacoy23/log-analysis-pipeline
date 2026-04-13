@@ -1,4 +1,4 @@
-# Run Pipeline — Design (v8)
+# Run Pipeline — Design (v9)
 
 ## Objective
 
@@ -9,7 +9,7 @@ The goal of this file is to:
 - Coordinate the ingestion, processing, and analysis layers
 - Receive pipeline configuration from the caller
 - Pass data and config between pipeline stages
-- Return a validated DataFrame to the caller
+- Return a validated DataFrame with computed columns to the caller
 
 ---
 
@@ -25,6 +25,7 @@ main.py → load_config() → config dict
        → run_pipeline.py → log_reader.py (raw logs)
                          → log_parser.py (parsed + validated logs)
                          → log_analysis.py (fully validated DataFrame)
+                         → get_metric_thresholds() (computed columns)
 ```
 
 ---
@@ -47,7 +48,8 @@ Orchestrates the full log ingestion, parsing, and analysis pipeline.
 - `raw_data` (dict[str, Any]) — full config dict loaded by main.py
 
 **Returns:**
-- `pd.DataFrame` — validated DataFrame with parsed log data
+- `pd.DataFrame` — validated DataFrame with parsed log data and
+  computed threshold columns
 
 ---
 
@@ -64,6 +66,8 @@ Orchestrates the full log ingestion, parsing, and analysis pipeline.
 6. parse_logs(raw_logs, column_names)                    → (list of parsed dicts, stats dict)
 7. convert_to_dataframe(parsed_logs, expected_columns,
    expected_values)                                      → fully validated DataFrame
+8. get_metric_thresholds(df, "response_size",
+   raw_data["metric_thresholds"])                        → adds response_size_bucket column
 ```
 
 The config is received from `main.py` as a parameter. The pipeline
@@ -80,17 +84,21 @@ extracts and adapts config values for each stage:
     types, used for column presence and dtype validation
   - `expected_values` (`dict[str, list]`) — column names mapped to
     valid values (lists for categorical, range for numeric)
+- **Metric thresholds** receives the DataFrame, the metric name
+  as a string, and the thresholds dict from config. Mutates the
+  DataFrame by adding a bucket column.
 
 ## Return Value
 
-A validated pandas DataFrame is returned. The raw strings and
-parsed dicts are intermediate steps not exposed to the caller.
+A validated pandas DataFrame with computed columns is returned.
+The raw strings and parsed dicts are intermediate steps not exposed
+to the caller.
 
 ---
 
 # Design Decisions
 
-## Service parameter removed
+## Service parameter removed (v8)
 The previous interface accepted a `service` string to select which
 service directory to read. With the migration to real logs, the
 per-service directory structure no longer exists. The reader now
@@ -115,12 +123,13 @@ directly from `raw_data["expected_values"]` — a dedicated config
 key that supports both list-based validation (method, protocol)
 and range-based validation (http_response).
 
-## Metric thresholds removed
-The previous pipeline called `get_metric_thresholds()` for cpu
-and mem columns. These columns do not exist in CLF logs. The
-function is retained in `log_analysis.py` (generic) but is not
-called by the pipeline until new thresholds are defined for
-CLF-relevant metrics.
+## Metric thresholds re-enabled for CLF data
+`get_metric_thresholds()` is called again after being temporarily
+removed during the migration. The call now uses `response_size`
+with thresholds defined in `config.yaml` under `metric_thresholds`.
+The function is generic — it works with any numeric column and
+any set of thresholds, including the `"max"` convention for
+dynamic upper bounds.
 
 ## Single responsibility
 `run_pipeline` orchestrates. It does not validate inputs, configure
@@ -133,24 +142,21 @@ logging, load configuration, or handle CLI arguments.
 | Element | Reason |
 |---|---|
 | `service` parameter | Per-service directory structure no longer exists |
-| `get_metric_thresholds()` calls for cpu and mem | Columns do not exist in CLF |
 | Manual `expected_values` construction from `service` and `level` keys | Replaced by dedicated `expected_values` config key |
 
 ---
 
-# Changes from v7
+# Changes from v8
 
-- Removed `service` parameter from function signature — reader
-  now receives log path from config
-- Reader call changed from `load_service_logs(service)` to
-  `load_all_logs(raw_data["paths"]["raw_log"])`
-- `expected_values` now read directly from
-  `raw_data["expected_values"]` instead of manually constructed
-  from `service` and `level` keys
-- Removed `get_metric_thresholds()` calls — cpu and mem columns
-  do not exist in real logs
-- Pipeline flow updated to reflect new reader interface and
-  config structure
+- Re-added `get_metric_thresholds()` call — now applied to
+  `response_size` with CLF-relevant thresholds (low: 0–669,
+  normal: 669–9200, high: 9200–max)
+- Added import of `get_metric_thresholds` from `log_analysis`
+- Pipeline flow updated to include step 8 (threshold computation)
+- DataFrame now includes `response_size_bucket` column before
+  being returned to the caller
+- "Metric thresholds removed" design decision from v8 replaced
+  with "Metric thresholds re-enabled for CLF data"
 
 ---
 
