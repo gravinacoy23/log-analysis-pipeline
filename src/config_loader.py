@@ -19,6 +19,7 @@ def load_config() -> dict[str, Any]:
         "paths",
         "columns",
         "expected_values",
+        "metric_thresholds",
     ]
 
     with config_file.open("r") as f:

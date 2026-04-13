@@ -1,4 +1,4 @@
-# Config Loader — Design (v4)
+# Config Loader — Design (v5)
 
 ## Objective
 
@@ -42,7 +42,8 @@ src/config_loader.py
 - Resolves the config file path using `pathlib` relative to `__file__`
 - Reads and parses the YAML file using `yaml.safe_load()`
 - Defines a `required_keys` list containing all keys the pipeline
-  depends on: `paths`, `columns`, `expected_values`
+  depends on: `paths`, `columns`, `expected_values`,
+  `metric_thresholds`
 - Iterates over `required_keys` and validates each one exists and
   is not empty using `.get()`
 - Raises a descriptive `ValueError` identifying the missing key
@@ -55,17 +56,14 @@ src/config_loader.py
   Callers access values by key, which is resilient to changes in other
   parts of the config.
 
-- **Required keys updated for real log migration.** The previous
-  required keys were `service`, `level`, `columns`,
-  `metric_thresholds`, and `feature_thresholds` — all tied to the
-  synthetic log pipeline. The new required keys are:
+- **Required keys updated for CLF metric thresholds.** The required
+  keys are now:
   - `paths` — log directory location
   - `columns` — column names and types for parser and analysis
   - `expected_values` — valid values and ranges for content
     validation
-  Keys like `metric_thresholds` and `feature_thresholds` are no
-  longer required at load time — they will be reintroduced when
-  new thresholds are defined for CLF-relevant metrics in Month 6.
+  - `metric_thresholds` — threshold boundaries for computed
+    bucket columns (e.g. response_size)
 
 - **Loop-based validation over individual checks.** The loop
   eliminates repetition and makes it easy to add new keys. The
@@ -97,7 +95,7 @@ columns:
   timestamp: datetime.datetime
   method: str
   endpoint: str
-  protocol: str
+  protocol_version: str
   http_response: int
   response_size: int
 
@@ -106,11 +104,17 @@ expected_values:
     - GET
     - POST
     - HEAD
-  protocol:
+  protocol_version:
     - HTTP/1.0
   http_response:
     - 100
     - 599
+
+metric_thresholds:
+  response_size:
+    low: 669
+    normal: 9200
+    high: max
 ```
 
 Each key serves a different pipeline stage:
@@ -119,8 +123,11 @@ Each key serves a different pipeline stage:
 - **`columns`** — column names for parser field mapping, column-to-type
   mapping for analysis layer dtype validation
 - **`expected_values`** — valid values for categorical columns
-  (method, protocol) and valid range for numeric columns
+  (method, protocol_version) and valid range for numeric columns
   (http_response) used by the analysis layer for content validation
+- **`metric_thresholds`** — threshold boundaries for computed
+  bucket columns, used by `get_metric_thresholds()` in the
+  analysis layer via `run_pipeline`
 
 ---
 
@@ -130,24 +137,22 @@ Each key serves a different pipeline stage:
 |---|---|
 | `service` | Per-service directory structure removed |
 | `level` | Log levels do not exist in CLF |
-| `metric_thresholds` | cpu and mem columns do not exist in CLF — will be reintroduced for new metrics |
 | `feature_thresholds` | Features being redesigned in Month 6 |
 | `hour_of_day_weights` | Generator-specific — generator deprecated |
 
-These keys may still be present in `config.yaml` during the
-migration but are no longer validated on load.
-
 ---
 
-# Changes from v3
+# Changes from v4
 
-- Required keys updated from `[service, level, columns,
-  metric_thresholds, feature_thresholds]` to `[paths, columns,
-  expected_values]` — reflects migration from synthetic to real
-  logs
-- Config structure section updated with new CLF-relevant keys
-- Deprecated config keys documented
-- System context simplified — generator reference removed
+- `metric_thresholds` added back to `required_keys` — new
+  thresholds defined for `response_size` with CLF-relevant
+  boundaries (low: 669, normal: 9200, high: max)
+- Config structure section updated to include `metric_thresholds`
+  with the current response_size configuration
+- `metric_thresholds` removed from deprecated keys table — it
+  is now active again with new content
+- Deprecated keys table updated: `metric_thresholds` removed,
+  remaining deprecated keys kept for reference
 
 ---
 
