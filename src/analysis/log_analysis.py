@@ -222,10 +222,14 @@ def get_metric_thresholds(
     metric_thresholds = dict(thresholds[metric])
 
     edges = [logs_dataframe[metric].min()]
-    labels = list()
+    labels = []
 
     for label, edge in metric_thresholds.items():
-        edges.append(edge)
+        if edge == "max":
+            edges.append(logs_dataframe[metric].max())
+        else:
+            edges.append(edge)
+
         labels.append(label)
 
     logs_dataframe[f"{metric}_bucket"] = pd.cut(

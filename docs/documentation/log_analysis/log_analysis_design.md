@@ -1,4 +1,4 @@
-# Log Analysis Module — Design (v7)
+# Log Analysis Module — Design (v8)
 
 ## Objective
 
@@ -284,9 +284,29 @@ responsibility and operates at a specific level.
 
 ### Implementation Details
 - Uses `pd.cut()` with config-driven edges and labels
-- Uses DataFrame column `.min()` as the lower edge
+- Lower bound is dynamic: uses `DataFrame[metric].min()`
+- Upper bound is dynamic: when a threshold value is the string
+  `"max"`, resolves to `DataFrame[metric].max()` at runtime
+- The loop iterates over threshold labels and edges from config,
+  handling `"max"` via a conditional check before appending to
+  the edges list
+- Labels are appended unconditionally regardless of whether the
+  edge is numeric or `"max"` — the label count always matches
+  `len(edges) - 1` as required by `pd.cut()`
 
 ### Design Decisions
+
+- **Dynamic bounds on both ends.** The lower edge uses `.min()`
+  and the upper edge supports `"max"` resolving to `.max()`.
+  This makes the function resistant to datasets with different
+  value ranges — no hardcoded boundaries that break on new data.
+
+- **`"max"` as a config convention.** Instead of requiring the
+  user to guess the maximum value in the dataset, the config
+  accepts the string `"max"` which the function resolves at
+  runtime. This is clearer than `null` or a sentinel number,
+  and communicates intent to anyone reading the config.
+
 - **Generic function preserved.** Works with any numeric column
   and any set of thresholds from config. Not tied to specific
   columns from the synthetic or real log format.
@@ -310,24 +330,21 @@ branch.
 
 ---
 
-## Changes from v6
+## Changes from v7
 
-- Added `_verify_response_field()` — validates `http_response`
-  against a numeric range from config instead of a list of
-  values
-- `_verify_col_values()` updated with `elif` chain handling
-  three validation paths: range-based for `http_response`,
-  `None` skip for `protocol_version`, list-based for all other columns
-- `protocol_version` with `None` value skipped in validation — `None`
-  represents legitimately absent HTTP version, not invalid
-  content. Parser already decided the line is valid.
-- `expected_values` in config now supports both list-based
-  validation (method, protocol_version) and range-based validation
-  (http_response)
-- Deprecated 7 functions that were hardcoded to synthetic log
-  columns (level, service, cpu, response_time)
-- Retained `convert_corr_matrix()`, `select_col()`, and
-  `get_metric_thresholds()` — all generic and format-independent
+- `get_metric_thresholds()` updated with dynamic upper bound:
+  threshold values in config can now be the string `"max"`,
+  which resolves to `DataFrame[metric].max()` at runtime
+- Previously only the lower bound was dynamic (`.min()`), and
+  the upper bound was a fixed number from config — this broke
+  when data exceeded the configured maximum
+- The conditional check for `"max"` is inside the existing
+  label/edge loop, keeping the function structure unchanged
+- Function re-enabled in Sprint 11 after being temporarily
+  unused during the CLF migration (cpu and mem columns removed
+  in v7)
+- Now called with `response_size` metric and new thresholds:
+  low (0–669), normal (669–9200), high (9200–max)
 
 ---
 
