@@ -28,42 +28,7 @@ expected_values:
     - 599
 
 metric_thresholds:
-  cpu:
-    low: 44
-    normal: 57
-    high: 70
-  mem:
-    low: 52
-    normal: 63
-    high: 75
-
-feature_thresholds:
-  high_rt: 800
-  high_cpu: 70
-
-hour_of_day_weights:
-  - 1
-  - 2
-  - 3
-  - 4
-  - 5
-  - 6
-  - 7
-  - 8
-  - 9
-  - 10
-  - 11
-  - 12
-  - 12
-  - 11
-  - 10
-  - 9
-  - 8
-  - 7
-  - 6
-  - 5
-  - 4
-  - 3
-  - 2
-  - 1
-
+  response_size:
+    low: 669
+    normal: 3100
+    high: max
