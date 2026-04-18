@@ -123,7 +123,7 @@ def _verify_col_dtype(
 
 
 def _verify_col_values(
-    log_line: dict[str, Any], expected_values: dict[str, list[str]], line_number: int
+    log_line: dict[str, Any], expected_values: dict[str, list[Any]], line_number: int
 ) -> bool:
     """Verifies that the given columns had the corresponding expected values.
 
@@ -137,12 +137,41 @@ def _verify_col_values(
     """
 
     for column in expected_values.keys():
-        if log_line[column] not in expected_values[column]:
+        if column == "http_response":
+            if not _verify_response_field(
+                log_line["http_response"], expected_values["http_response"], line_number
+            ):
+                return False
+        elif column == "protocol_version" and log_line[column] is None:
+            continue
+        elif log_line[column] not in expected_values[column]:
             logger.warning(
                 f"The column {column}, contains an unexpected value: {log_line[column]} at line {line_number}"
             )
             return False
 
+    return True
+
+
+def _verify_response_field(
+    value: int, value_range: list[int], line_number: int
+) -> bool:
+    """Validates that the http response is in a valid range.
+
+    Args:
+        value: HTTP response
+        value_range: valid ranges defined in the config file
+        line_number: Current log
+
+    Returns:
+        Whether the line value is in a valid range.
+    """
+
+    if value not in range(value_range[0], value_range[1]):
+        logger.warning(
+            f"The column http_response, contains an unexpected value {value} at line {line_number}"
+        )
+        return False
     return True
 
 
@@ -160,20 +189,6 @@ def convert_corr_matrix(logs_dataframe: pd.DataFrame) -> pd.DataFrame:
     return numeric_cols.corr("pearson")
 
 
-def filter_loglevel(logs_dataframe: pd.DataFrame, level: str) -> pd.DataFrame:
-    """Filters all the logs that match the input level.
-
-    Args:
-        logs_dataframe: DF of parsed logs.
-        level: level of the log.
-
-    Returns:
-        A new DF with the selected log level
-    """
-
-    return logs_dataframe.loc[logs_dataframe["level"] == level]
-
-
 def select_col(
     logs_dataframe: pd.DataFrame, column_name: str
 ) -> pd.DataFrame | pd.Series:
@@ -188,86 +203,6 @@ def select_col(
     """
 
     return logs_dataframe[column_name]
-
-
-def count_by_level(logs_dataframe: pd.DataFrame, level: str) -> int:
-    """Counts the occurrences of a given log level in the dataframe.
-
-    Args:
-        logs_dataframe: DF of parsed logs
-        level: level of the log
-
-    Returns:
-        Amount of occurrences of the given level
-    """
-
-    return (logs_dataframe["level"] == level).sum()
-
-
-def count_by_level_all(logs_dataframe: pd.DataFrame) -> pd.Series:
-    """Counts the occurrences per level in all the DataFrame.
-
-    Args:
-        logs_dataframe: DF of parsed logs
-
-    Returns:
-        A series with the occurrences per level.
-    """
-
-    return logs_dataframe.value_counts("level")
-
-
-def count_by_service(logs_dataframe: pd.DataFrame, service: str) -> int:
-    """Counts the occurrences of a given service.
-
-    Args:
-        logs_dataframe: DF of parsed logs
-        service: Name of the service
-
-    Returns:
-        Occurrences if the given service in the DF
-    """
-
-    return (logs_dataframe["service"] == service).sum()
-
-
-def count_by_service_all(logs_dataframe: pd.DataFrame) -> pd.Series:
-    """Counts the number of occurrences of all the services in the DF.
-
-    Args:
-        logs_dataframe: DF of parsed logs.
-
-    Returns:
-        Series with the number of occurrences
-    """
-
-    return logs_dataframe.value_counts("service")
-
-
-def mean_rt_by_service(logs_dataframe: pd.DataFrame) -> pd.Series:
-    """Calculates the mean response time by service.
-
-    Args:
-        logs_dataframe: DF of parsed logs.
-
-    Returns:
-        Series with the mean response time per service
-    """
-
-    return logs_dataframe.groupby("service")["response_time"].mean()  # type: ignore[return-value]
-
-
-def mean_cpu_by_level(logs_dataframe: pd.DataFrame) -> pd.Series:
-    """Calculates the mean CPU usage by level.
-
-    Args:
-        logs_dataframe: DF of parsed logs.
-
-    Returns:
-        Series with the mean CPU usage per level.
-    """
-
-    return logs_dataframe.groupby("level")["cpu"].mean()  # type: ignore[return-value]
 
 
 def get_metric_thresholds(
@@ -287,10 +222,14 @@ def get_metric_thresholds(
     metric_thresholds = dict(thresholds[metric])
 
     edges = [logs_dataframe[metric].min()]
-    labels = list()
+    labels = []
 
     for label, edge in metric_thresholds.items():
-        edges.append(edge)
+        if edge == "max":
+            edges.append(logs_dataframe[metric].max())
+        else:
+            edges.append(edge)
+
         labels.append(label)
 
     logs_dataframe[f"{metric}_bucket"] = pd.cut(
@@ -299,86 +238,3 @@ def get_metric_thresholds(
         labels=labels,
         include_lowest=True,
     )
-
-
-if __name__ == "__main__":
-    log_dicts = [
-        {
-            "timestamp": "2026-03-09T23:13:29Z",
-            "service": "booking",
-            "user": 11,
-            "cpu": 35,
-            "mem": 49,
-            "response_time": 378,
-            "level": "INFO",
-            "msg": "Seat booked",
-        },
-        {
-            "timestamp": "2026-03-09T23:13:29Z",
-            "service": "booking",
-            "user": 96,
-            "cpu": 38,
-            "mem": 72,
-            "response_time": 351,
-            "level": "INFO",
-            "msg": "Booking failed",
-        },
-        {
-            "timestamp": "2026-03-09T23:13:29Z",
-            "service": "booking",
-            "user": 65,
-            "cpu": 57,
-            "mem": 40,
-            "response_time": 624,
-            "level": "WARNING",
-            "msg": "Seat booked",
-        },
-        {
-            "timestamp": "2026-03-09T23:13:29Z",
-            "service": "booking",
-            "user": 35,
-            "cpu": 58,
-            "mem": 52,
-            "response_time": 698,
-            "level": "WARNING",
-            "msg": "Booking confirmed",
-        },
-        {
-            "timestamp": "2026-03-09T23:13:29Z",
-            "service": "booking",
-            "user": 60,
-            "cpu": 40,
-            "mem": 73,
-            "response_time": 207,
-            "level": "INFO",
-            "msg": "Seat booked",
-        },
-        {
-            "timestamp": "2026-03-09T23:13:29Z",
-            "service": "booking",
-            "user": 60,
-            "cpu": 40,
-            "mem": 73,
-            "response_time": 207,
-            "level": "ERROR",
-            "msg": "Seat booked",
-        },
-    ]
-
-    expected_columns = {
-        "timestamp": "str",
-        "service": "str",
-        "user": "int",
-        "cpu": "int",
-        "mem": "int",
-        "response_time": "int",
-        "level": "str",
-        "msg": "str",
-    }
-
-    expected_values = {
-        "service": ["shopping", "pricing", "booking"],
-        "level": ["INFO", "WARNING", "ERROR"],
-    }
-
-    print(convert_to_dataframe(log_dicts, expected_columns, expected_values))

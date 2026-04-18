@@ -1,4 +1,4 @@
-#python temp 
+#python temp
 .pytest_cache/*
 __pycache__/*
 

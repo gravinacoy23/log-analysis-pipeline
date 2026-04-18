@@ -1,4 +1,4 @@
-# Run Pipeline — Implementation (v7)
+# Run Pipeline — Design (v9)
 
 ## Objective
 
@@ -9,7 +9,7 @@ The goal of this file is to:
 - Coordinate the ingestion, processing, and analysis layers
 - Receive pipeline configuration from the caller
 - Pass data and config between pipeline stages
-- Return a validated DataFrame to the caller
+- Return a validated DataFrame with computed columns to the caller
 
 ---
 
@@ -25,6 +25,7 @@ main.py → load_config() → config dict
        → run_pipeline.py → log_reader.py (raw logs)
                          → log_parser.py (parsed + validated logs)
                          → log_analysis.py (fully validated DataFrame)
+                         → get_metric_thresholds() (computed columns)
 ```
 
 ---
@@ -39,17 +40,16 @@ pipelines/run_pipeline.py
 
 # Interface
 
-## `run_pipeline(service, raw_data)`
+## `run_pipeline(raw_data)`
 
-Orchestrates the full log ingestion, parsing, and analysis pipeline
-for a given service.
+Orchestrates the full log ingestion, parsing, and analysis pipeline.
 
 **Parameters:**
-- `service` (str) — name of the service to process (e.g. `"booking"`)
 - `raw_data` (dict[str, Any]) — full config dict loaded by main.py
 
 **Returns:**
-- `pd.DataFrame` — validated DataFrame with parsed log data
+- `pd.DataFrame` — validated DataFrame with parsed log data and
+  computed threshold columns
 
 ---
 
@@ -58,120 +58,110 @@ for a given service.
 ## Pipeline Flow
 
 ```
-1. extract expected_columns from raw_data["columns"]       → dict[str, str]
-2. extract column names via list(.keys())                   → list[str]
-3. build expected_values from raw_data["service"] and
-   raw_data["level"]                                        → dict[str, list[str]]
-4. load_service_logs(service)                               → iterator of raw strings
-5. parse_logs(raw_logs, column_names)                       → (list of parsed dicts, stats dict)
-6. convert_to_dataframe(parsed_logs, expected_columns,
-   expected_values)                                         → fully validated DataFrame
-7. get_metric_thresholds(df, "cpu", thresholds)             → mutates DataFrame
-8. get_metric_thresholds(df, "mem", thresholds)             → mutates DataFrame
+1. extract log path from raw_data["paths"]["raw_log"]    → str
+2. extract expected_columns from raw_data["columns"]     → dict[str, str]
+3. extract column names via list(.keys())                → list[str]
+4. extract expected_values from raw_data["expected_values"] → dict[str, list]
+5. load_all_logs(log_path)                               → iterator of raw strings
+6. parse_logs(raw_logs, column_names)                    → (list of parsed dicts, stats dict)
+7. convert_to_dataframe(parsed_logs, expected_columns,
+   expected_values)                                      → fully validated DataFrame
+8. get_metric_thresholds(df, "response_size",
+   raw_data["metric_thresholds"])                        → adds response_size_bucket column
 ```
 
 The config is received from `main.py` as a parameter. The pipeline
 extracts and adapts config values for each stage:
 
+- **Reader** receives the log directory path as a string from
+  `raw_data["paths"]["raw_log"]`
 - **Parser** receives `list[str]` of column names — for field
-  presence validation per line. Returns a tuple: the parsed logs
-  and a stats dict with lines_processed, skipped_lines, and
-  skip_rate. The pipeline unpacks both; `parse_stats` is available
-  for future use.
+  mapping and presence validation per line. Returns a tuple: the
+  parsed logs and a stats dict with lines_processed, skipped_lines,
+  and skip_rate.
 - **Analysis layer** receives two config-derived structures:
   - `expected_columns` (`dict[str, str]`) — column names mapped to
     types, used for column presence and dtype validation
-  - `expected_values` (`dict[str, list[str]]`) — categorical column
-    names mapped to valid values, used for content validation
-
-## Expected Values Construction
-
-The pipeline builds `expected_values` from existing config keys:
-
-```python
-expected_values = {
-    "service": raw_data["service"],
-    "level": raw_data["level"],
-}
-```
-
-The keys match the DataFrame column names (`"service"`, `"level"`),
-which allows the analysis layer to validate generically without
-hardcoding column names. The values are the lists of valid options
-already defined in the config for the generator.
+  - `expected_values` (`dict[str, list]`) — column names mapped to
+    valid values (lists for categorical, range for numeric)
+- **Metric thresholds** receives the DataFrame, the metric name
+  as a string, and the thresholds dict from config. Mutates the
+  DataFrame by adding a bucket column.
 
 ## Return Value
 
-A validated pandas DataFrame is returned with computed columns
-(`cpu_bucket`, `mem_bucket`). The raw strings and parsed dicts are
-intermediate steps not exposed to the caller.
+A validated pandas DataFrame with computed columns is returned.
+The raw strings and parsed dicts are intermediate steps not exposed
+to the caller.
 
 ---
 
 # Design Decisions
 
+## Service parameter removed (v8)
+The previous interface accepted a `service` string to select which
+service directory to read. With the migration to real logs, the
+per-service directory structure no longer exists. The reader now
+receives a single directory path from config. The `service`
+parameter was removed from the function signature.
+
 ## Config received from caller, not loaded internally
-Previously `run_pipeline` loaded config independently via
-`load_config()`. Now it receives the config dict from `main.py`.
-This eliminates redundant config loading when multiple pipelines
-need the same config, and makes the dependency explicit in the
-function signature.
+The config dict is received from `main.py`. This eliminates
+redundant config loading when multiple pipelines need the same
+config, and makes the dependency explicit in the function signature.
 
 ## Orchestrator adapts config format per stage
-The pipeline extracts column names as a `list[str]` for the parser,
-passes the full columns dict for type validation, and builds a
-separate `expected_values` dict for content validation. Each stage
-receives only what it needs in the format it needs — no module knows
-how the config is structured internally.
+The pipeline extracts the log path for the reader, column names
+as a `list[str]` for the parser, and passes the full columns dict
+and expected values for the analysis layer. Each stage receives
+only what it needs in the format it needs.
 
-## Expected values reuse existing config keys
-The `service` and `level` lists in the config are the same lists the
-generator uses to produce logs. Reusing them for validation ensures
-the pipeline validates against the same values the generator produces,
-keeping the system consistent without duplicating configuration.
+## Expected values from dedicated config key
+Previously `expected_values` was built manually in the pipeline
+from `raw_data["service"]` and `raw_data["level"]`. Now it comes
+directly from `raw_data["expected_values"]` — a dedicated config
+key that supports both list-based validation (method, protocol)
+and range-based validation (http_response).
 
-## Config key names match DataFrame column names
-The config keys `service` and `level` (renamed from `services` and
-`levels` in v4) match the DataFrame column names exactly. This allows
-the analysis layer to use config keys directly as column references
-without needing a mapping layer.
+## Metric thresholds re-enabled for CLF data
+`get_metric_thresholds()` is called again after being temporarily
+removed during the migration. The call now uses `response_size`
+with thresholds defined in `config.yaml` under `metric_thresholds`.
+The function is generic — it works with any numeric column and
+any set of thresholds, including the `"max"` convention for
+dynamic upper bounds.
 
 ## Single responsibility
 `run_pipeline` orchestrates. It does not validate inputs, configure
-logging, load configuration, or handle CLI arguments. Each layer has
-one job.
-
-## pipelines/ directory
-The `pipelines/` directory is plural by design. As the project grows,
-additional pipelines can be added here — for example a training pipeline
-or a feature pipeline — each with its own file and clear responsibility.
+logging, load configuration, or handle CLI arguments.
 
 ---
 
-# Changes from v6
+# Deprecated (removed in v8)
 
-- `parse_logs` return value unpacked as tuple:
-  `parsed_logs, parse_stats = parse_logs(...)` — stats dict
-  available for future pipeline metadata reporting
-- Pipeline flow updated to reflect tuple return from parser
+| Element | Reason |
+|---|---|
+| `service` parameter | Per-service directory structure no longer exists |
+| Manual `expected_values` construction from `service` and `level` keys | Replaced by dedicated `expected_values` config key |
 
 ---
 
-# Changes from v5
+# Changes from v8
 
-- `load_config()` removed — config is now received as `raw_data`
-  parameter from `main.py`
-- `load_config` import removed from the module
-- Function signature updated: `run_pipeline(service, raw_data)`
-- Pipeline flow updated to reflect that config extraction happens
-  from the received dict, not from a local load
-- System context diagram updated to show config flowing from main
+- Re-added `get_metric_thresholds()` call — now applied to
+  `response_size` with CLF-relevant thresholds (low: 0–669,
+  normal: 669–9200, high: 9200–max)
+- Added import of `get_metric_thresholds` from `log_analysis`
+- Pipeline flow updated to include step 8 (threshold computation)
+- DataFrame now includes `response_size_bucket` column before
+  being returned to the caller
+- "Metric thresholds removed" design decision from v8 replaced
+  with "Metric thresholds re-enabled for CLF data"
 
 ---
 
 # Future Improvements (Planned)
 
-- Accept a list of services and run the pipeline for each
 - Surface parse_stats to the caller or to logs — the stats are
   available but not yet used by the pipeline beyond logging in
   the parser

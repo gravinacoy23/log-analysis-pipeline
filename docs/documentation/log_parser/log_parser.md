@@ -1,38 +1,28 @@
-# Log Parser — Implementation (v4)
+# Log Parser — Design (v5)
 
 ## Objective
 
-Implement a log parser module for the airline booking backend pipeline.
-
-The goal of this phase is to:
-
-- Transform raw log strings into structured Python dictionaries
-- Extract all fields from each log line
-- Apply correct data types to numeric fields
-- Validate that all expected fields are present per line
-- Reject lines with empty values
-- Handle malformed lines gracefully without crashing the pipeline
-- Track and report parsing statistics (lines processed, skipped, skip rate)
-- Prepare structured data for the pandas layer
+Provide the processing layer for the log analysis pipeline.
+Receives raw log lines from the reader and parses them into
+structured dictionaries ready for DataFrame creation. Validates
+line structure using regex, extracts and converts fields, and
+reports parsing statistics.
 
 ---
 
-# System Context
+## System Context
 
-The log parser is the first stage of the processing layer.
-
-It sits between the reader and the analysis layer. Its only responsibility
-is to transform raw strings into structured data. It does not know where
-the logs came from or what will be done with the data — that is the
-responsibility of the layers above and below.
+The parser sits between the reader and the analysis layer. It
+receives raw strings and produces structured data. It validates
+format — the analysis layer validates content.
 
 ```
-log_reader.py → log_parser.py → pandas DataFrame
+log_reader.py → raw lines → log_parser.py → list[dict] + stats → log_analysis.py
 ```
 
 ---
 
-# Module Location
+## Module Location
 
 ```
 src/processing/log_parser.py
@@ -40,420 +30,328 @@ src/processing/log_parser.py
 
 ---
 
-# Interface
+## Dependencies
 
-## `parse_logs(logs, expected_cols)`
-
-Parses a list of raw log strings into a list of dictionaries and
-returns parsing statistics alongside the result.
-
-**Parameters:**
-- `logs` (Iterator[str]) — iterator of raw log lines as returned by `log_reader.py`
-- `expected_cols` (list[str]) — list of required column names loaded from config
-
-**Returns:**
-- `tuple[list[dict[str, Any]], dict[str, int | float] | dict[str, int]]`
-  — a tuple containing:
-  - List of dicts — one dictionary per valid log line
-  - Dict of parsing statistics — lines_processed, skipped_lines,
-    and skip_rate (skip_rate omitted when input is empty)
-
-**Behavior:**
-- Malformed lines are skipped and logged as warnings
-- Lines with empty field values are skipped and logged as warnings
-- Lines with empty messages are skipped and logged as warnings
-- Lines missing expected columns are skipped and logged as warnings
-- Valid lines with all expected fields are always included
-- Parsing statistics are logged at INFO level at the end of parsing
-- Empty input (0 lines processed, 0 skipped) is logged as a WARNING
+- `re` — compiled regex pattern for Common Log Format matching
+- `datetime` — `strptime` for timestamp conversion
+- `logging` — warning and info messages for skipped lines and
+  statistics
 
 ---
 
-# Log Format
+## Function: parse_logs()
 
-Each log line follows this structure:
+### Parameters
 
-```
-timestamp=2026-03-08T15:59:49Z service=booking user=100 cpu=60 mem=41 response_time=561 level=INFO msg="Seat booked"
-```
+- `logs` — `Iterator[str]` of raw log lines from the reader
+- `expected_cols` — `list[str]` of column names from config,
+  used for field mapping and column verification
 
-All fields follow the `key=value` pattern. The `msg` field is the only
-field that may contain spaces inside quoted values.
+### Returns
 
----
+- `tuple[list[dict[str, Any]], dict[str, int | float]]` — parsed
+  log dicts and a stats dict with lines_processed, skipped_lines,
+  and skip_rate
 
-# Implementation Details
+### Implementation Details
 
-## Four-Function Design
+- Compiles the regex pattern once before the loop using
+  `re.compile()` — avoids recompiling on every iteration across
+  ~1.57M lines
+- Iterates over the log lines with `enumerate(start=1)` for
+  line number tracking
+- Guard clause: if `pattern.match()` returns `None`, the line
+  is completely malformed — skip, log warning, increment counter
+- Calls `_parse_fields()` to extract and convert field values
+- Calls `_verify_columns()` to confirm all expected columns
+  are present in the resulting dict
+- Calls `_skip_report()` at the end to build and log statistics
 
-The parser is split into four functions with distinct responsibilities:
-
-- `parse_logs(logs, expected_cols)` — orchestrates iteration over all
-  lines, validates messages, validates column completeness, tracks
-  skipped lines, and delegates statistics reporting
-- `_parse_fields(fields, line_number)` — parses a single line's
-  key=value fields, rejects malformed or empty values (private)
-- `_verify_columns(logs_dict, expected_cols, line_number)` — validates
-  that all expected columns are present in a parsed dict (private)
-- `_skip_report(skipped_lines, lines_processed)` — builds and logs
-  parsing statistics (private)
-
-This separation keeps each function focused on one concern: parsing,
-field validation, column completeness, and statistics reporting.
-
-## Skipped Line Tracking
-
-A `skipped_lines` counter is incremented at each point where a line
-is rejected in `parse_logs`:
-
-- Missing or empty message → `skipped_lines += 1`
-- `_parse_fields` returns `None` → `skipped_lines += 1`
-- `_verify_columns` returns `False` → `skipped_lines += 1`
-
-All three rejection points live in `parse_logs`, so the counter is
-maintained in a single function without needing auxiliary functions
-to modify an external variable.
-
-The number of successfully processed lines is derived from
-`len(log_dict_list)` after the loop — O(1) operation on a Python
-list, no counter needed.
-
-## Message Field Isolation
-
-The `msg` field is handled separately because it can contain spaces,
-which would break a naive `.split()` approach.
-
-`str.partition(" msg=")` splits the line into three parts:
-- Everything before `msg`
-- The separator itself (discarded with `_`)
-- The message value
+### Regex Pattern
 
 ```python
-before_message, _, message = log.partition(" msg=")
+r"(\S+) (\S+) (\S+) \[(.+?)\] \"(.+?)\" (\d+) (\S+)"
 ```
 
-The message is stripped of quotes and newlines immediately after
-partition. If the result is empty, the line is skipped with a warning
-before any further processing occurs.
+Captures 7 groups from Common Log Format:
+1. Host (IP or hostname)
+2. Identity (RFC 1413, almost always `-`)
+3. User (authenticated user, almost always `-`)
+4. Timestamp (inside `[]`)
+5. Request line (inside `""` — contains method, endpoint,
+   and optionally HTTP version)
+6. Status code
+7. Response size (may be `-`)
 
-## Field Parsing
+### Guard Clause Flow
 
-After isolating the message, the remaining fields are split by space.
-Each `key=value` pair is then split by `=` to extract the key and value.
-
-## Type Detection and Conversion
-
-Type detection uses guard clauses followed by explicit checks instead
-of relying on exceptions for control flow.
-
-For each field, the logic follows this order:
-
-1. **Malformation guard** — if `split_log` has fewer than 2 elements,
-   the line is malformed. Log a warning and return `None` immediately.
-2. **Empty value guard** — if `split_log[1]` is an empty string
-   (e.g. `cpu=`), the field has no value. Log a warning identifying
-   the field name and return `None` immediately.
-3. **Numeric check** — if the value is numeric (`str.isdigit()`),
-   convert to `int`.
-4. **Timestamp check** — if the key is `"timestamp"`, parse with
-   `datetime.fromisoformat()`.
-5. **Default** — store as string.
-
-```python
-if len(split_log) < 2:
-    logger.warning(f"Malformed line skipped at line {line_number}")
-    return None
-elif not split_log[1]:
-    logger.warning(
-        f"Missing {split_log[0]} at line {line_number}, line skipped"
-    )
-    return None
-
-if split_log[1].isdigit():
-    log_dict[split_log[0]] = int(split_log[1])
-elif split_log[0] == "timestamp":
-    log_dict[split_log[0]] = datetime.fromisoformat(split_log[1])
-else:
-    log_dict[split_log[0]] = split_log[1]
+```
+1. re.match returns None         → skip (malformed line)
+2. _parse_fields returns None    → skip (field-level issue)
+3. _verify_columns returns False → skip (missing column)
+4. All pass                      → append to result list
 ```
 
-The guard clauses are separate from the type detection chain because
-they represent different concerns — validation vs assignment.
+### Design Decisions
 
-## Column Completeness Validation
+- **`re.compile()` outside the loop.** The regex pattern is
+  constant. Compiling once and reusing the pattern object
+  avoids redundant compilation on every line. Standard practice
+  for large-file parsing.
 
-After a line is successfully parsed by `_parse_fields` and the message
-is attached, `_verify_columns` checks that every expected column from
-the config is present in the resulting dictionary.
+- **Orchestration structure preserved from v4.** The flow
+  (iterate → validate → skip or collect → report) is identical
+  to the previous parser. What changed is the parsing logic
+  inside, not the orchestration around it.
 
-```python
-if not _verify_columns(log_dict, expected_cols, line_number):
-    skipped_lines += 1
-    continue
-```
-
-This catches lines where the `key=value` syntax is valid but a field
-is entirely missing — for example a line without `mem=` at all. The
-empty value guard in `_parse_fields` catches `mem=` with no value;
-`_verify_columns` catches the absence of `mem` entirely.
-
-## Message Cleanup
-
-The `msg` value is stripped of surrounding quotes and trailing newline
-characters using `.strip('"\n')`.
-
-```python
-parsed_message = message.strip('"\n')
-```
-
-Both characters are stripped together because log lines read from disk
-include a trailing `\n`. A naive `.strip('"')` would leave the newline
-after the closing quote.
-
-## Line Numbering
-
-`enumerate(logs, start=1)` is used to track the human-readable line
-number. This is passed to `_parse_fields` and `_verify_columns` so
-that warning messages reference the correct line.
+- **Stats tuple return preserved.** The parser returns both
+  the parsed data and parsing statistics as a tuple — same
+  interface as v4. The pipeline unpacks both; the caller
+  decides what to do with the stats.
 
 ---
 
-# Validation Flow
+## Function: _parse_fields()
 
-Each line goes through three levels of validation before being accepted:
+### Parameters
 
-```
-1. Message present?          → No  → skip, log warning, increment counter
-2. Fields parseable?         → No  → skip, log warning, increment counter
-3. All expected cols present? → No  → skip, log warning, increment counter
-4. All passed               → append to result list
-```
+- `split_log_line` — `tuple[str | Any, ...]` of captured groups
+  from the regex match
+- `line_number` — current line number for warning messages
+- `expected_columns` — `list[str]` of column names for field
+  mapping
 
-After the loop completes:
+### Returns
 
-```
-5. _skip_report(skipped_lines, len(log_dict_list)) → log stats, return stats dict
-```
+- `dict[str, Any] | None` — parsed dict mapping column names
+  to values, or `None` if the line should be skipped
 
-Each level catches a different class of problem:
-- Level 1: missing or malformed `msg` field
-- Level 2: fields that cannot be split (`key=value`) or have empty values (`key=`)
-- Level 3: syntactically valid lines with missing fields
+### Implementation Details
 
----
+- Calls `_parse_request_line()` to expand the request group
+  into method, endpoint, and protocol_version — producing a flat
+  tuple of 9 values from the original 7
+- Uses `zip(values, column_names)` to map each value to its
+  corresponding column name in a single pass
+- Field-specific processing:
+  - **`response_size`:** converts to `int` if digit, converts
+    `-` to `0`, rejects anything else as malformed
+  - **`http_response`:** converts to `int` if digit, rejects
+    anything else as malformed
+  - **`timestamp`:** converts to `datetime` using `strptime`
+    with format `%d/%b/%Y:%H:%M:%S %z`
+  - **`protocol_version`:** allowed to be `None` (some request lines
+    lack HTTP version) — skipped by the empty-value guard
+  - **All other fields:** stored as strings
+- Guard clause: if a value is empty and the field is not
+  `protocol_version`, the line is skipped with a warning
 
-# Function: _skip_report()
+### Design Decisions
 
-## Parameters
+- **`zip()` for field mapping.** The regex produces values in
+  a fixed positional order. The config provides column names
+  in the same order. `zip()` pairs them naturally without
+  index management.
 
-- `skipped_lines` — integer count of lines rejected during parsing
-- `lines_processed` — integer count of lines successfully parsed
+- **`response_size` as `-` maps to `0`.** In CLF, `-` means
+  no response body was sent — common for redirects (302) and
+  some error responses. `0` represents the same meaning as a
+  numeric value suitable for DataFrame operations. This is a
+  representation of reality, not fabricated data.
 
-## Returns
+- **`http_response` converted to `int`.** Status codes are
+  numeric values needed for range comparisons (e.g. filtering
+  `>= 400`, defining `is_error`). Converting in the parser
+  keeps the analysis layer clean — it receives the correct
+  type directly.
 
-- `dict[str, int | float] | dict[str, int]` — dict containing
-  `lines_processed`, `skipped_lines`, and `skip_rate` (percentage).
-  When both values are 0 (empty input), `skip_rate` is omitted to
-  avoid division by zero.
+- **`protocol_version` allowed as `None`.** Some request lines in the
+  NASA dataset contain only method and endpoint without an
+  HTTP version. The method and endpoint are still valuable for
+  analysis. `None` becomes `NaN` in the DataFrame, which pandas
+  handles natively.
 
-## Implementation Details
-
-- Builds the stats dict with lines_processed and skipped_lines
-- If both are 0, logs a WARNING about empty input and returns
-  the dict without skip_rate
-- Otherwise calculates skip_rate as a percentage:
-  `(skipped / (skipped + processed)) * 100`
-- Iterates over the stats dict and logs each metric at INFO level
-
-## Design Decisions
-
-- **Separate function for statistics.** The main parsing loop tracks
-  the raw counter. Building the report, calculating the rate, and
-  logging are a distinct responsibility — delegated to `_skip_report`.
-
-- **Logs at INFO level, not WARNING.** Parsing statistics are
-  informational — they report what happened, not what went wrong.
-  Individual skipped lines are already logged as warnings. The
-  empty input case is logged as WARNING because it signals a
-  potential problem upstream.
-
-- **Skip rate calculated in the parser, not downstream.** The skip
-  rate is a direct metric of parsing quality. The parser has the
-  raw data to compute it, and it is logged alongside the other
-  stats for immediate visibility.
-
-- **Division by zero handled via early return.** When both counters
-  are 0, the function returns early with only the two counters.
-  This avoids a conditional inside the calculation and keeps the
-  happy path clean.
+- **`timestamp` parsed with timezone.** The `%z` directive
+  handles the `-0400` offset in the CLF timestamp format.
+  The resulting `datetime` object is timezone-aware.
 
 ---
 
-# Error Handling
+## Function: _parse_request_line()
 
-## Malformed Lines
+### Parameters
 
-A line is considered malformed if any field cannot be split into a
-`key=value` pair — detected by checking `len(split_log) < 2`.
+- `split_log_line` — `tuple[str | Any, ...]` of captured groups
+  from the regex match
 
-When a malformed line is detected:
-- A `WARNING` is logged identifying the line number
-- `_parse_fields` returns `None`
-- `parse_logs` increments the skip counter and continues processing
+### Returns
 
-## Empty Values
+- `tuple[str]` — flat tuple with the request line expanded
+  into method, endpoint, and protocol_version, replacing the original
+  single request group
 
-A field with a key but no value (e.g. `cpu=`) produces
-`split_log = ['cpu', '']`. The empty string passes the length check
-but is caught by the `not split_log[1]` guard clause. The warning
-message includes the field name for clarity.
+### Implementation Details
 
-Without this check, an empty value would be stored as an empty string
-in the dict. This is worse than `NaN` in a DataFrame because `.isna()`
-does not detect empty strings — the bad data would be invisible to
-downstream quality checks.
+- Splits the request group (index 4) by spaces
+- Filters empty strings from the split result
+- Handles two cases:
+  - **< 3 parts:** appends `None` for missing protocol_version
+  - **>= 3 parts:** checks if the last element starts with
+    `HTTP/` to determine if it is a protocol_version or part of the
+    endpoint:
+    - If last element starts with `HTTP/`: treats it as
+      protocol_version, joins middle elements as endpoint
+    - If last element does not start with `HTTP/`: joins all
+      elements after method as endpoint, sets protocol_version to `None`
+- Reassembles the full tuple: fields 0–3 + expanded request
+  + fields 5–6
 
-## Missing Fields
+### Design Decisions
 
-A line missing a field entirely (e.g. no `mem=` token at all) produces
-a valid dict with fewer keys than expected. `_verify_columns` detects
-this by comparing the dict keys against the expected columns list.
+- **`HTTP/` prefix check for protocol_version detection.** The NASA
+  dataset contains request lines where spaces in the endpoint
+  produce 3+ parts but no protocol_version is present. Simply taking
+  the last element as protocol_version would assign endpoint fragments
+  as the protocol_version value. Checking for the `HTTP/` prefix
+  distinguishes real protocol_versions from endpoint fragments without
+  requiring config or external data.
 
-## Empty Messages
+- **`>= 3` instead of separate `== 3` and `> 3` branches.**
+  Originally `== 3` was treated as the "normal" case requiring
+  no adjustment, and `> 3` handled spaces in endpoints. However,
+  some lines have exactly 3 parts where the last part is not a
+  protocol_version (e.g. `"GET /path/page.html>Link</a>, a"` splits
+  into 3 parts but `a` is not a protocol_version). Using `>= 3` with
+  the `HTTP/` check handles both cases uniformly. For the normal
+  case `["GET", "/path", "HTTP/1.0"]`, the check passes and
+  `join` of a single-element list produces the element unchanged
+  — no performance or correctness impact.
 
-A missing or empty message is detected in `parse_logs` before any
-field parsing occurs. If `message.strip('"\n')` produces an empty
-string, the line is skipped immediately.
+- **Handles spaces in endpoints.** Some NASA log entries have
+  spaces within the URL path. Rather than skipping these lines,
+  the first element is treated as method, and everything between
+  method and protocol_version (or everything after method if no protocol_version)
+  is joined as the endpoint.
 
-## Implicit Handling of Malformed `msg` Field
+- **`None` for missing protocol_version.** When the request line lacks
+  a valid HTTP protocol_version, `None` is appended. The method and
+  endpoint are still valid and useful for analysis.
 
-A malformed `msg` field — for example `msg"Seat booked"` instead of
-`msg="Seat booked"` — is handled implicitly without extra logic.
-
-`str.partition(" msg=")` does not find the separator and returns the
-full line as the first element unchanged. The malformed `msg"Seat booked"`
-token then reaches `_parse_fields` as a field without a valid `=`
-separator, triggering the same guard clause as any other malformed field.
-
-## Empty Input
-
-When the iterator produces no lines (empty log file), both counters
-remain at 0. `_skip_report` detects this and logs a warning. The
-empty list is returned to the caller, where the analysis layer's
-`_verify_columns` will raise a `ValueError` for an empty list.
-
-## Logging
-
-Uses Python's standard `logging` module. A module-level logger is
-created once using `logging.getLogger(__name__)`.
-
-```python
-logger = logging.getLogger(__name__)
-```
-
-Logger configuration (handlers, format, level) is the responsibility
-of the entry point (`main.py`), not this module. The logging level
-in `main.py` is set to `INFO` to surface parsing statistics.
-
----
-
-# Design Decisions
-
-## Guard clause over exception handling for validation
-Malformed fields are detected using `len()` instead of catching
-`IndexError`. Exceptions should signal unexpected conditions, not serve
-as the primary branching mechanism. The guard clause makes the validation
-explicit and readable.
-
-## `isdigit()` over try/except for type detection
-Numeric detection uses `str.isdigit()` instead of attempting `int()`
-and catching `ValueError`. This keeps exceptions for truly unexpected
-situations and uses normal control flow for expected branching.
-
-## Separate concerns in conditional blocks
-The guard clauses (`if len < 2` and `elif not split_log[1]`) are
-separate from the type detection chain (`if isdigit / elif timestamp /
-else`). Guards handle validation and exit early. The chain handles
-assignment logic. Mixing them would conflate two different concerns.
-
-## `None` as sentinel value
-`_parse_fields` returns `None` for malformed lines. This allows
-`parse_logs` to use a simple `if log_dict is None` check to decide
-whether to proceed with column validation.
-
-## `_verify_columns` returns bool, not None
-Unlike `_parse_fields` which returns `None` as a sentinel,
-`_verify_columns` returns `True` or `False`. This is because the
-check happens inside `parse_logs` where `continue` is used directly —
-a boolean is clearer than checking for `None` in this context.
-
-## Expected columns come from the caller
-`parse_logs` receives the expected columns list as a parameter from
-the pipeline orchestrator. The parser does not load config — it
-receives what it needs. This is the same decoupling pattern used in
-`_verify_columns()` in the analysis layer.
-
-## Two layers of column validation are not redundant
-The parser's `_verify_columns` validates each dict individually as it
-is built. The analysis layer's `_verify_columns` validates the
-complete list before DataFrame creation — catching the case where all
-lines are rejected and the list arrives empty. Each layer validates
-at its own level.
-
-## Private function convention
-`_parse_fields`, `_verify_columns`, and `_skip_report` are prefixed
-with `_` to signal they are internal implementation details, not part
-of the public interface of the module.
-
-## No hardcoded field names in type detection
-Type detection does not rely on a list of numeric field names. Instead,
-`isdigit()` detects numeric values generically. This makes the parser
-resilient to minor format changes without requiring updates to a field
-registry.
-
-## Logging over print
-`logger.warning()` and `logger.info()` are used instead of `print()`
-for all validation and statistics reporting. Functions should not have
-console side effects, and logging gives the application control over
-how and where messages are handled.
-
-## Tuple return for data + metadata
-`parse_logs` returns a tuple of `(parsed_logs, stats_dict)`. This is
-appropriate because the function always returns exactly two things of
-different nature — the data and metadata about the data. The stats
-dict can grow internally (new metrics) without changing the tuple
-structure. This avoids the fragility of positional tuples with many
-elements (as seen in the generator's original config return).
+- **Produces a flat tuple.** The caller (`_parse_fields`)
+  expects a flat sequence of values matching the column name
+  list. Expanding the request line in place keeps the mapping
+  clean.
 
 ---
 
-# Changes from v3
+## Function: _verify_columns()
 
-- `parse_logs` now returns a tuple: `(list[dict], stats_dict)` —
-  parsed logs and parsing statistics returned together
-- Added `skipped_lines` counter in `parse_logs` — incremented at
-  each rejection point (missing message, failed parse, missing columns)
-- Lines processed count derived from `len(log_dict_list)` after
-  the loop — O(1) on Python lists
-- Added `_skip_report()` — builds stats dict, calculates skip rate,
-  logs statistics at INFO level
-- Empty input handled: when both counters are 0, logs WARNING and
-  returns stats without skip_rate to avoid division by zero
-- Logging level in `main.py` changed from WARNING to INFO to surface
-  parsing statistics
-- "Return parsing statistics" removed from Future Improvements —
-  resolved
+### Parameters
+
+- `logs_dict` — `dict[str, Any]` containing one parsed log line
+- `expected_cols` — `list[str]` of required column names
+- `line_number` — current line number for warning messages
+
+### Returns
+
+- `bool` — `True` if all expected columns are present
+
+### Implementation Details
+
+- Iterates over expected column names and checks presence in
+  the dict
+- Returns `False` on first missing column
+- Logs a warning identifying the missing column and line number
+
+### Design Decisions
+
+- **Unchanged from v4.** This function is generic — it checks
+  column presence against a config-driven list. The migration
+  to CLF does not affect its logic.
 
 ---
 
-# Future Improvements (Planned)
+## Function: _skip_report()
 
-- ~~Parse `timestamp` field into a proper `datetime` object~~ — resolved
-  in `_parse_fields()` using `datetime.fromisoformat()` from Python's
-  standard library.
-- ~~Validate that all expected fields are present before accepting a
-  line~~ — resolved with `_verify_columns()` and empty value guard.
-- ~~Return parsing statistics (lines processed, lines skipped)~~ —
-  resolved with tuple return and `_skip_report()`.
-- Support configurable field type mappings from `config.yaml`
-- Support for additional log formats
+### Parameters
+
+- `skipped_lines` — counter of skipped lines
+- `lines_processed` — counter of successfully parsed lines
+
+### Returns
+
+- `dict[str, int | float]` — stats dict with lines_processed,
+  skipped_lines, and skip_rate (percentage)
+
+### Implementation Details
+
+- Handles the edge case of both counters being 0 (empty file)
+  with a warning and returns without computing skip_rate
+- Computes skip_rate as a percentage of total lines
+- Logs all stats at INFO level
+
+### Design Decisions
+
+- **Unchanged from v4.** Generic reporting function — works
+  regardless of log format.
+
+---
+
+## Data Quality Handling
+
+| Case | Lines | Handling |
+|---|---|---|
+| Completely malformed (no regex match) | ~2 | Skipped by `parse_logs` guard clause |
+| Missing endpoint (request line has < 2 parts) | 6 | Skipped by `_parse_fields` empty-value guard |
+| Missing protocol_version (request line has < 3 parts) | ~1400 | `None` appended, becomes `NaN` in DataFrame |
+| Missing protocol_version (request line has >= 3 parts, last element is not `HTTP/`) | ~few | Last element joined into endpoint, protocol_version set to `None` |
+| Spaces in endpoint with protocol_version present | ~11 | Middle elements joined as single endpoint |
+| Spaces in endpoint without protocol_version | ~few | All elements after method joined as endpoint, protocol_version `None` |
+| Response size is `-` | ~10 | Converted to `0` |
+| Binary/garbled request data with valid structure | 2 | Passes parser — content validation deferred to analysis layer (method not in expected values) |
+| Non-UTF-8 bytes | ~few | Dropped by reader (`errors="ignore"`), parser sees cleaned line |
+| **Total skipped** | **8** | **0.0005% skip rate** |
+
+---
+
+## Deprecated (removed in v5)
+
+| Element | Reason |
+|---|---|
+| `str.partition(" msg=")` | Synthetic `key=value` format no longer used |
+| `str.split("=")` field parsing | Replaced by regex capture groups |
+| `isdigit()` for generic type detection | Replaced by field-specific conversion |
+| `msg` field handling | Messages do not exist in CLF |
+
+All deprecated code is preserved in git history on the `main`
+branch.
+
+---
+
+## Changes from v4
+
+- Complete rewrite of parsing logic for Common Log Format
+  (Month 5, Sprint 10)
+- Regex-based parsing replaces `key=value` string splitting
+- `re.compile()` used for pattern compilation before the loop
+- Added `_parse_request_line()` — splits request group into
+  method, endpoint, and protocol_version with `HTTP/` prefix detection
+  for distinguishing protocol_version from endpoint fragments
+- `_parse_request_line()` uses `>= 3` branch with `HTTP/` check
+  instead of separate `== 3` and `> 3` branches — handles
+  edge case where exactly 3 parts are present but last part
+  is not a protocol_version
+- `_parse_fields()` rewritten — uses `zip()` for field-to-column
+  mapping, field-specific conversion for timestamp, response
+  size, http_response, and protocol_version
+- `http_response` converted to `int` in parser — enables
+  numeric range validation in analysis layer
+- Guard clause added in `parse_logs()` for `None` regex match
+- `_verify_columns()` and `_skip_report()` unchanged — generic
+  functions that work across formats
+
+---
+
+## Future Improvements (Planned)
+
+- Support additional log formats beyond CLF

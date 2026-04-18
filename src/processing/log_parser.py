@@ -2,6 +2,7 @@ from datetime import datetime
 from collections.abc import Iterator
 from typing import Any
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -22,24 +23,21 @@ def parse_logs(
 
     log_dict_list = list()
     skipped_lines = 0
+    log_pattern = re.compile(r"(\S+) (\S+) (\S+) \[(.+?)\] \"(.+?)\" (\d+) (\S+)")
 
     for line_number, log in enumerate(logs, start=1):
-        before_message, _, message = log.partition(" msg=")
-        metrics = before_message.split(" ")
-        parsed_message = message.strip('"\n')
+        split_log = log_pattern.match(log)
 
-        if not parsed_message:
-            logger.warning(f"Missing message at line {line_number}")
+        if split_log is None:
+            logger.warning(f"No match found for line {line_number}, line skipped")
             skipped_lines += 1
             continue
 
-        log_dict = _parse_fields(metrics, line_number)
+        log_dict = _parse_fields(split_log.groups(), line_number, expected_cols)
 
         if log_dict is None:
             skipped_lines += 1
             continue
-
-        log_dict["msg"] = parsed_message
 
         if not _verify_columns(log_dict, expected_cols, line_number):
             skipped_lines += 1
@@ -53,39 +51,84 @@ def parse_logs(
 
 
 def _parse_fields(
-    logs_without_message: list[str], line_number: int
+    split_log_line: tuple[str | Any, ...], line_number: int, expected_columns: list[str]
 ) -> dict[str, Any] | None:
-    """Parses the portion of the logs that do not contain the message.
+    """Parses all the fields of the log line.
 
     Args:
-        logs_without_message: Partitioned log line prior to the message.
+        split_log_line: Log line constructed with the match of the regex.
         line_number: Current line number.
+        expected_columns: Defined in the config file for validation.
 
     Returns:
-        All the lines parsed in a dict.
+        Line parsed in a dict mapped to each value to corresponding column name.
     """
 
     log_dict = dict()
-    for log in logs_without_message:
-        split_log = log.split("=")
+    new_split_line = _parse_request_line(split_log_line)
 
-        if len(split_log) < 2:
-            logger.warning(f"Malformed line skipped at line {line_number}")
-            return None
-        elif not split_log[1]:
-            logger.warning(
-                f"Missing {split_log[0]} at line {line_number}, line skipped"
-            )
+    for item, col_title in zip(new_split_line, expected_columns):
+        if not item and col_title != "protocol_version":
+            logger.warning(f"Missing value for {col_title} at line {line_number}")
             return None
 
-        if split_log[1].isdigit():
-            log_dict[split_log[0]] = int(split_log[1])
-        elif split_log[0] == "timestamp":
-            log_dict[split_log[0]] = datetime.fromisoformat(split_log[1])
+        if col_title == "response_size":
+            if item.isdigit():
+                log_dict[col_title] = int(item)
+            elif item == "-":
+                log_dict[col_title] = 0
+            else:
+                logger.warning(f"Malformed line skipped at line {line_number}")
+                return None
+        elif col_title == "http_response":
+            if item.isdigit():
+                log_dict[col_title] = int(item)
+            else:
+                logger.warning(f"Malformed line skipped at line {line_number}")
+                return None
+
+        elif col_title == "timestamp":
+            log_dict[col_title] = datetime.strptime(item, "%d/%b/%Y:%H:%M:%S %z")
         else:
-            log_dict[split_log[0]] = split_log[1]
+            log_dict[col_title] = item
 
     return log_dict
+
+
+def _parse_request_line(split_log_line: tuple[str | Any, ...]) -> tuple[str]:
+    """Parses the request line dividing into the 3 corresponding sub-fields.
+
+    Args:
+        split_log_line: Log line constructed with the match of the regex
+
+    Returns:
+        Cleaned log line with all the expected fields.
+    """
+
+    request_line = split_log_line[4].split(" ")
+    request_line_clean = [item for item in request_line if item.strip()]
+
+    if len(request_line_clean) < 3:
+        request_line_clean.append(None)
+    elif len(request_line_clean) >= 3:
+        if request_line_clean[-1].startswith("HTTP/"):
+            request_line_clean = [
+                request_line_clean[0],
+                "".join(request_line_clean[1:-1]),
+                request_line_clean[-1],
+            ]
+        else:
+            request_line_clean = [
+                request_line_clean[0],
+                "".join(request_line_clean[1:]),
+                None,
+            ]
+
+    return (
+        *split_log_line[:4],
+        *(request_line_clean),
+        *split_log_line[5:],
+    )  # pyright: ignore
 
 
 def _verify_columns(

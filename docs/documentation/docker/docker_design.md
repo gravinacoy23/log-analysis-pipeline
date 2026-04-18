@@ -1,4 +1,4 @@
-# Docker Setup — Design (v1)
+# Docker Setup — Design (v2)
 
 ## Objective
 
@@ -16,6 +16,8 @@ the code works — it guarantees the environment in which it runs.
 ```
 Host machine → docker build → Docker image (code + dependencies)
 Docker image → docker run  → Container (pipeline executes)
+             → volume mount → data/raw/access_logs/ (input)
+             → volume mount → output/ (output)
 ```
 
 ---
@@ -67,17 +69,14 @@ rebuilds faster during development.
 `--no-cache-dir` tells pip not to store downloaded packages
 locally, reducing the final image size.
 
-## Code and Log Generation
+## Code
 
 ```dockerfile
 COPY . .
-RUN python3 scripts/log_generator.py -c 100
 ```
 
-The full codebase is copied into the container. Then the log
-generator runs during build to create the dataset the pipeline
-needs. This ensures the container is self-contained — it does
-not depend on logs existing on the host machine.
+The full codebase is copied into the container. Log data is not
+included — it is provided at runtime via volume mount.
 
 ## Entry Point
 
@@ -105,10 +104,12 @@ docs/*
 
 ## Design Decisions
 
-- **`data/` and `output/` excluded.** Both are generated during
-  execution — `data/` by the log generator during build, `output/`
-  by the reporting pipeline at runtime. Copying them from the host
-  would add unnecessary size and could introduce stale data.
+- **`data/` excluded.** Log data is provided at runtime via volume
+  mount, not baked into the image. This keeps the image small and
+  allows analyzing different datasets without rebuilding.
+
+- **`output/` excluded.** Generated at runtime by the reporting
+  pipeline. Copying from the host would introduce stale data.
 
 - **`.git/` excluded.** The Git history is not needed to run the
   pipeline and can be significantly larger than the codebase itself.
@@ -134,14 +135,32 @@ docker build -t log-pipeline .
 ## Run the pipeline
 
 ```bash
-docker run -v $(pwd)/output:/log-analysis-pipeline/output --user $(id -u):$(id -g) log-pipeline
+docker run \
+  -v $(pwd)/data/raw/access_logs/:/log-analysis-pipeline/data/raw/access_logs/ \
+  -v $(pwd)/output:/log-analysis-pipeline/output \
+  --user $(id -u):$(id -g) \
+  log-pipeline
 ```
 
-## Run with a different service
+## Prerequisites
 
-```bash
-docker run -v $(pwd)/output:/log-analysis-pipeline/output --user $(id -u):$(id -g) log-pipeline python main.py -s pricing
-```
+The pipeline expects at least one log file in
+`data/raw/access_logs/` on the host machine before running
+the container. The reader will raise a `ValueError` if the
+directory is empty.
+
+## Volume Mounts
+
+Two volume mounts are used:
+
+- **Input:** `data/raw/access_logs/` — mounts the host log files
+  into the container where the reader expects them. This allows
+  analyzing different datasets by changing the host directory
+  without rebuilding the image.
+
+- **Output:** `output/` — mounts the output directory so plots
+  and datasets generated inside the container persist on the
+  host after the container exits.
 
 ## Volume Mount Ownership
 
@@ -166,17 +185,25 @@ Then re-run the container with the `--user` flag.
 
 ---
 
-# Current Limitations
+# Changes from v1
 
-- **Logs are generated at build time.** The dataset is baked into
-  the image. To analyze different data, the image must be rebuilt.
-  This is acceptable for Month 1 — dynamic data loading will evolve
-  in later phases.
+- Removed `RUN python3 scripts/log_generator.py -c 2000` from
+  Dockerfile — log generator deprecated, real log data is now
+  provided via volume mount
+- Added input volume mount for `data/raw/access_logs/` — log
+  data provided at runtime instead of generated at build time
+- Removed `--service` argument from run examples — service
+  parameter no longer exists
+- Added prerequisites section documenting the requirement for
+  log files to exist before running
+- `.dockerignore` unchanged — `data/*` remains excluded because
+  data enters via volume mount, not `COPY`
+- System context updated to show both volume mounts
 
 ---
 
 # Future Improvements (Planned)
 
-- Environment variable support for config path resolution (Month 6)
-- Docker Compose for local development (Month 6)
-- Cloud deployment with Docker on EC2 (Month 6)
+- Environment variable support for config path resolution
+- Docker Compose for local development
+- Cloud deployment with Docker on EC2
