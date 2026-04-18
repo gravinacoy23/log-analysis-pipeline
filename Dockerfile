@@ -1,12 +1,12 @@
 FROM python:3.11-slim
 
+ENV MPLCONFIGDIR=/tmp/matplotlib
+
 WORKDIR /log-analysis-pipeline
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-
-RUN python3 scripts/log_generator.py -c 2000
 
 CMD ["python","main.py"]
