@@ -1,10 +1,11 @@
-# Airline Booking Log Pipeline
+# Log Analysis Pipeline
 
 ## Overview
 
-This project simulates a production-style backend logging system for an
-airline booking platform. The goal is to design and build a structured
-log pipeline that evolves into a data-driven and cloud-ready system.
+A production-style log analysis pipeline that processes real web server
+access logs through a structured data pipeline. The project started with
+synthetic airline booking logs and has been migrated to real NASA HTTP
+access logs (August 1995, ~1.57M entries).
 
 The project progressively develops strong foundations in:
 
@@ -16,42 +17,43 @@ The project progressively develops strong foundations in:
 
 ---
 
-## System Simulation
+## Data Source
 
-The system simulates an airline booking backend composed of three services:
+NASA Kennedy Space Center WWW server access logs.
+Source: https://ita.ee.lbl.gov/html/contrib/NASA-HTTP.html
 
-- shopping
-- pricing
-- booking
-
-Each service generates structured logs containing operational metrics such as:
-
-- CPU usage
-- Memory usage
-- Response time
-- Log level (INFO, WARNING, ERROR)
-
-Logs are intentionally designed to be ML-ready — they contain structured,
-quantifiable features with realistic correlations suitable for future
-modeling and anomaly detection.
+The dataset contains HTTP access logs from August 1995 in Common Log
+Format (CLF). Each entry records a request to the NASA web server
+including the client host, timestamp, HTTP method, requested endpoint,
+status code, and response size.
 
 ---
 
 ## Log Format
 
-Each log entry follows this structure:
+Each log entry follows Common Log Format:
 
 ```
-timestamp=<value> service=<service> user=<id> cpu=<value> mem=<value> response_time=<ms> level=<LEVEL> msg="<message>"
+host identity user [timestamp] "method endpoint protocol" status size
 ```
 
 Example:
 
 ```
-timestamp=2026-03-09T22:15:52Z service=booking user=15 cpu=35 mem=43 response_time=413 level=INFO msg="Booking confirmed"
+ppptky455.asahi-net.or.jp - - [01/Aug/1995:06:10:01 -0400] "GET /images/WORLD-logosmall.gif HTTP/1.0" 200 669
 ```
 
-All fields follow the `key=value` pattern for consistent parsing.
+Fields:
+
+- **host** — client hostname or IP address
+- **identity** — RFC 1413 identity (always `-` in this dataset)
+- **user** — authenticated username (usually `-`)
+- **timestamp** — request date and time with timezone
+- **method** — HTTP method (GET, POST, HEAD)
+- **endpoint** — requested URL path
+- **protocol** — HTTP version (HTTP/1.0)
+- **status** — HTTP response status code
+- **size** — response body size in bytes
 
 ---
 
@@ -65,9 +67,7 @@ log-analysis-pipeline/
 │
 ├── data/
 │   └── raw/
-│       ├── shopping/
-│       ├── pricing/
-│       └── booking/
+│       └── access_logs/
 │
 ├── src/
 │   ├── ingestion/
@@ -76,17 +76,17 @@ log-analysis-pipeline/
 │   │   └── log_parser.py
 │   ├── analysis/
 │   │   ├── log_analysis.py
-│   │   └── log_visualizer.py
+│   │   ├── log_visualizer.py
+│   │   └── log_statistical_analysis.py
 │   ├── features/
 │   │   └── feature_engineering.py
 │   └── config_loader.py
 │
 ├── pipelines/
 │   ├── run_pipeline.py
-│   └── run_reporting_pipeline.py
-│
-├── scripts/
-│   └── log_generator.py
+│   ├── run_reporting_pipeline.py
+│   ├── run_features_pipeline.py
+│   └── run_statistical_pipeline.py
 │
 ├── output/
 │   ├── plots/
@@ -106,42 +106,53 @@ log-analysis-pipeline/
 
 ## How to Run
 
-### Generate logs
+### Prerequisites
 
-```bash
-python scripts/log_generator.py -c 2000
-```
+Place at least one log file in `data/raw/access_logs/` before
+running the pipeline. The reader will raise a `ValueError` if the
+directory is empty.
 
 ### Run the pipeline
 
 ```bash
-python main.py -s booking
+python main.py
 ```
 
 ### Run with Docker
 
+Build the image:
+
 ```bash
 docker build -t log-pipeline .
-docker run -v $(pwd)/output:/log-analysis-pipeline/output log-pipeline
 ```
 
-To analyze a different service:
+Create output directory and run:
 
 ```bash
-docker run -v $(pwd)/output:/log-analysis-pipeline/output log-pipeline python main.py -s pricing
+mkdir -p output
+docker run \
+  -v $(pwd)/data/raw/access_logs/:/log-analysis-pipeline/data/raw/access_logs/ \
+  -v $(pwd)/output:/log-analysis-pipeline/output \
+  --user $(id -u):$(id -g) \
+  log-pipeline
 ```
+
+> Note: `mkdir -p output` must be run before the container to
+> ensure the directory is owned by your user. If Docker creates
+> it automatically, it will be owned by root and the container
+> will fail with a permission error when running with `--user`.
 
 ---
 
 ## Pipeline Architecture
 
 ```
-log_generator.py → data/raw/<service>/
+data/raw/access_logs/
     → log_reader.py (lazy iteration via generators)
-    → log_parser.py (guard clauses, field validation)
+    → log_parser.py (regex, guard clauses, field validation)
     → log_analysis.py (validation orchestrator, DataFrame creation)
+    → get_metric_thresholds() (response_size bucketing)
     → run_reporting_pipeline.py → output/plots/
-    → feature_engineering.py → output/datasets/
 ```
 
 Orchestrated by `run_pipeline.py` and `main.py`.
@@ -151,7 +162,7 @@ Configuration driven via `config/config.yaml`.
 
 ## Current Phase
 
-**Phase 1 — Data Science Foundations (Month 3 in progress)**
+**Phase 1.5 — Real-World Data Migration (Month 6 in progress)**
 
 ### Month 1 — Complete ✅
 - Modular log pipeline end to end
@@ -172,11 +183,30 @@ Configuration driven via `config/config.yaml`.
 - Docker volume mounts for output persistence
 - Missing values handling: .isna(), .fillna(), .dropna()
 
-### Month 3 — In Progress
+### Month 3 — Complete ✅
 - Feature engineering module for ML-ready dataset creation
 - Config-driven feature thresholds
 - Pipeline persistence to CSV
 - Linux automation (bash, cron)
+
+### Month 4 — Complete ✅
+- Distribution and correlation analysis
+- Train/test split with stratification
+- Bias vs variance, evaluation metrics, confusion matrix
+- Statistical analysis module and pipeline
+
+### Month 5 — Complete ✅
+- Migration from synthetic to real NASA HTTP access logs
+- Regex-based parser for Common Log Format
+- Config-driven validation for new columns and data types
+- End-to-end pipeline verified on ~1.57M log lines
+
+### Month 6 — In Progress
+- Reporting pipeline adapted for CLF columns
+- Metric thresholds defined for response_size
+- Correlation and distribution analysis on real data
+- Feature engineering redesign (pending)
+- Statistical pipeline adaptation (pending)
 
 ---
 
@@ -184,7 +214,7 @@ Configuration driven via `config/config.yaml`.
 
 This repository will evolve into:
 
-- A structured data pipeline with feature engineering
+- A structured data pipeline processing real-world data
 - A cloud-deployable system (AWS)
 - A foundation for ML model training
 - A reproducible engineering project
