@@ -1,4 +1,4 @@
-# Main — Implementation (v6)
+# Main — Implementation (v7)
 
 ## Objective
 
@@ -7,7 +7,6 @@ Implement the entry point for the log analysis pipeline.
 The goal of this file is to:
 
 - Configure logging for the entire application
-- Accept runtime arguments from the user
 - Load pipeline configuration once and pass it to all pipelines
 - Call the pipeline orchestrators and return results
 
@@ -24,8 +23,12 @@ appropriate pipelines.
 user → main.py → load_config() → config dict
               → run_pipeline.py (receives config)
               → run_report_pipeline.py
-              → run_features_pipeline.py (receives config)
-              → run_statistical_pipeline.py
+```
+
+Temporarily disabled (pending Month 6 Weeks 2–3):
+```
+              → run_features_pipeline.py (feature redesign)
+              → run_statistical_pipeline.py (depends on features)
 ```
 
 ---
@@ -40,14 +43,13 @@ main.py  (project root)
 
 # Interface
 
-## `main(service_name)`
+## `main()`
 
-Loads configuration, calls the data pipeline, the reporting
-pipeline, the features pipeline, and the statistical pipeline
-in sequence.
+Loads configuration, calls the data pipeline and the reporting
+pipeline in sequence, and returns the DataFrame.
 
 **Parameters:**
-- `service_name` (str) — name of the service to analyze
+- None
 
 **Returns:**
 - `pd.DataFrame` — parsed log data as returned by `run_pipeline`
@@ -89,41 +91,38 @@ to `INFO` to surface parsing statistics alongside warnings.
 > Important: `logging.basicConfig()` is called before `argparse` and
 > before any function that could trigger a log event. Order matters.
 
-## Argument Parsing
-
-Uses `argparse` to accept the service name from the command line:
-
-```bash
-python main.py -s booking
-python main.py --service pricing
-```
-
-If no argument is provided, the default service is `booking`.
-
 ## Pipeline Coordination
 
 `main()` coordinates pipelines in sequence:
 
 1. `load_config()` — loads configuration once
-2. `run_pipeline(service_name, config_data)` — ingestion, parsing,
-   and DataFrame creation with computed columns
-3. `run_report_pipeline(logs_dataframe)` — generates all visualizations
-   and saves them to `output/plots/`
-4. `run_features_pipeline(logs_dataframe, config_data)` — generates
-   derived features and saves the dataset to `output/datasets/`
-5. `run_statistical_pipeline()` — loads the feature dataset, performs
-   train/test split, and saves splits to `output/datasets/`
+2. `run_pipeline(config_data)` — ingestion, parsing, DataFrame
+   creation with computed columns (including response_size_bucket)
+3. `run_report_pipeline(logs_dataframe)` — generates all
+   visualizations and saves them to `output/plots/`
+
+Temporarily disabled pending Month 6 adaptation:
+
+4. `run_features_pipeline(logs_dataframe, config_data)` — feature
+   engineering redesign for CLF domain (Week 2)
+5. `run_statistical_pipeline()` — depends on new feature dataset
+   (Week 3)
 
 The config dict is passed to pipelines that need it. The DataFrame
-produced by the data pipeline is passed to both the reporting and
-features pipelines. The statistical pipeline is self-contained — it
-loads its input from disk because the feature dataset is already
-persisted by step 4. `main()` does not modify or inspect any
-intermediate results.
+produced by the data pipeline is passed to the reporting pipeline.
+`main()` does not modify or inspect any intermediate results.
 
 ---
 
 # Design Decisions
+
+## Service argument removed
+The previous interface accepted a `--service` CLI argument to
+select which service directory to read. With the migration to real
+NASA HTTP access logs, the per-service directory structure no longer
+exists. The reader now receives a single directory path from config.
+The `argparse` definition remains in the `__main__` block for future
+use but the `--service` argument has been removed.
 
 ## Config loaded once in main, passed to pipelines
 Previously each pipeline loaded config independently. Moving
@@ -141,50 +140,44 @@ guarantees no log event is emitted before the configuration is in place.
 pipelines in sequence, and returns the DataFrame. Business logic
 belongs in the pipeline layer, not in the entry point.
 
-## argparse over hardcoded values
-The service name is passed as a CLI argument rather than hardcoded.
-This makes the pipeline reusable without modifying source code.
+## Downstream pipelines temporarily disabled
+The features and statistical pipelines are commented out because
+they reference synthetic log columns that no longer exist. They
+will be re-enabled after redesign in Month 6 Weeks 2–3. The
+imports remain in the file to make re-enabling straightforward.
 
 ## Pipeline execution order matters
-The statistical pipeline depends on the feature dataset existing on
-disk. `main.py` guarantees the order: features pipeline runs before
-statistical pipeline. If the order is violated, the statistical
-pipeline raises a `ValueError` because the directory or file does
-not exist.
+When all pipelines are active, the statistical pipeline depends on
+the feature dataset existing on disk. `main.py` guarantees the
+order: features pipeline runs before statistical pipeline. If the
+order is violated, the statistical pipeline raises a `ValueError`
+because the directory or file does not exist.
 
 ---
 
-# Changes from v5
+# Changes from v6
 
-- Added `run_statistical_pipeline()` as fourth pipeline call —
-  loads feature dataset, performs train/test split, and persists
-  splits to `output/datasets/`
-- Imports `run_statistical_pipeline` from
-  `pipelines.run_statistical_pipeline`
-- `run_report_pipeline` renamed from `report_pipeline` for naming
-  consistency with other pipelines (`run_pipeline`,
-  `run_features_pipeline`, `run_statistical_pipeline`)
-- System context and pipeline coordination updated to reflect
-  four pipelines
-
----
-
-# Changes from v4
-
-- Added `run_features_pipeline(logs_dataframe, config_data)` as
-  third pipeline call — generates feature dataset and persists
-  to `output/datasets/features.csv`
-- Imports `run_features_pipeline` from
-  `pipelines.run_features_pipeline`
-- System context and pipeline coordination updated to reflect
-  three pipelines
+- Removed `service_name` parameter from `main()` — function now
+  takes no arguments
+- Removed `--service` / `-s` CLI argument from argparse — the
+  per-service directory structure no longer exists
+- `run_report_pipeline()` re-enabled — reporting pipeline updated
+  with CLF column names (method, http_response, response_size)
+- `run_features_pipeline()` and `run_statistical_pipeline()` remain
+  commented out — pending feature engineering redesign in Month 6
+  Weeks 2–3
+- System context updated to show active vs temporarily disabled
+  pipelines
+- Pipeline coordination updated to reflect 2 active pipelines
+  and 2 pending
 
 ---
 
 # Future Improvements (Planned)
 
-- Replace `logging.basicConfig()` with `logging.config.dictConfig()` for
-  production-grade logging configuration — supports multiple handlers,
-  log rotation, and environment-specific settings
-- Support running multiple services in a single execution
+- Re-enable features and statistical pipelines after Month 6
+  redesign
+- Replace `logging.basicConfig()` with `logging.config.dictConfig()`
+  for production-grade logging configuration — supports multiple
+  handlers, log rotation, and environment-specific settings
 - Add a `--output` argument to persist results to a file
