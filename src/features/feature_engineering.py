@@ -16,15 +16,7 @@ def orchestrate_features(
         A dataframe with the feature engineering a context cols.
     """
 
-    features_list = list()
-    context_cols = ["timestamp", "service", "user"]
-
-    features_list.append(_context_cols(logs_dataframe, context_cols))
-    features_list.append(_service_encoded(logs_dataframe, services))
-    features_list.append(_hour_of_day(logs_dataframe))
-    features_list.append(_is_error(logs_dataframe))
-    features_list.append(_is_slow(logs_dataframe, thresholds["high_rt"]))
-    features_list.append(_cpu_mem_ratio(logs_dataframe))
+    features_list = []
 
     return pd.concat(features_list, axis=1)
 
