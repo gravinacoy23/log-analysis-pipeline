@@ -2,14 +2,14 @@
 
 ## Current Status
 
-**Month 5 — Complete.**
-**Month 6 — Starting. Sprint 11 (Week 1) next.**
+**Month 6 — In Progress.**
+**Sprint 11 (Week 1) — Complete.**
+**Sprint 12 (Week 2) — Next.**
 
-Pipeline successfully migrated from synthetic airline booking
-logs to real NASA HTTP access logs (Common Log Format). Core
-pipeline (reader → parser → analysis → DataFrame) running
-end-to-end on real data. Downstream pipelines (reporting,
-features, statistical) temporarily disabled pending adaptation.
+Pipeline fully migrated to real NASA HTTP access logs. Data
+pipeline and reporting pipeline running end-to-end on main
+branch. Migration branch merged via first PR. Feature engineering
+and statistical pipelines pending redesign.
 
 ---
 
@@ -80,19 +80,66 @@ features, statistical) temporarily disabled pending adaptation.
 - Sprint checkpoint: 8.5/10
 - 220+ commits
 
+### Sprint 11 (Week 1, Month 6) — Complete ✅
+
+**Reporting pipeline adaptation:**
+- `run_reporting_pipeline.py` updated: method count, http_response
+  count, response_size distribution, correlation heatmap
+- Visualizer unchanged — confirmed generic
+- 4 reports instead of 6 (cpu, mem, level, service removed)
+
+**Config cleanup:**
+- Deprecated keys removed: `hour_of_day_weights`,
+  `feature_thresholds` (old)
+- `metric_thresholds` re-added with response_size buckets
+- `metric_thresholds` added to `required_keys` in config_loader
+
+**Metric thresholds:**
+- `get_metric_thresholds()` updated with dynamic upper bound
+  (`"max"` in config resolves to `DataFrame[metric].max()`)
+- response_size buckets: low (0–669), normal (669–9200),
+  high (9200–max)
+- Called from `run_pipeline.py`
+
+**Analysis findings:**
+- response_size: right-skewed distribution (median 3.1K,
+  mean 17K, max 3.4M)
+- http_response: describe() output semantically meaningless
+  for categorical-as-int column
+- Pearson correlation ~0 between http_response and response_size
+  due to class imbalance (89% status 200), categorical nature
+  of status codes, and low variance
+- Documented in `docs/analysis_findings_month6.md`
+
+**Docker migration:**
+- Log generator build step removed
+- Input data via volume mount
+- `ENV MPLCONFIGDIR=/tmp/matplotlib` added
+- Two volume mounts: input (access_logs) + output
+- Prerequisite: `mkdir -p output` before docker run
+
+**Documentation and merge:**
+- Design docs updated: log_analysis v8, run_pipeline v9,
+  reporting v4, config_loader v5, main v7, docker v2
+- README rewritten for real data
+- `__main__` blocks removed (tech debt: test suite)
+- First PR created and merged on GitHub
+- Branch `migration/real-logs` deleted
+- Sprint checkpoint: 7.7/10
+
 ---
 
-## Month 6 — Starting
+## Month 6 — Next
 
-### Sprint 11 (Week 1) — Analysis Layer and Visualization
+### Sprint 12 (Week 2) — Feature Engineering Redesign
 
-Plan in `docs/week1_month6.md`:
-- Reporting pipeline column adaptation
-- Config cleanup (remove deprecated keys)
-- Re-enable reporting pipeline in main.py
-- Correlation and distribution analysis on real data
-- Documentation updates and __main__ blocks
-- Merge `migration/real-logs` branch to main
+Plan in `docs/week2_month6.md`:
+- Design new features for CLF domain
+- Implement: status_category, is_error, hour_of_day,
+  endpoint_frequency, is_large_response
+- Re-enable features pipeline in main.py
+- Persist feature dataset to CSV
+- Documentation updates
 
 ---
 
@@ -101,7 +148,10 @@ Plan in `docs/week1_month6.md`:
 - Phase 1 (Months 1–4): Data Science Foundations ✅
 - Phase 1.5 (Months 5–6): Real-World Data Migration ← current
   - Month 5: Reader, parser, config, analysis migration ✅
-  - Month 6: Analysis adaptation, feature redesign, reporting ← starting
+  - Month 6 Week 1: Reporting, thresholds, analysis findings ✅
+  - Month 6 Week 2: Feature engineering redesign ← next
+  - Month 6 Week 3: Statistical pipeline adaptation
+  - Month 6 Week 4: End-to-end verification, documentation
 - Phase 2 (Months 7–9): Cloud Engineering (AWS, Docker, databases)
 - Phase 3 (Months 10–12): Machine Learning
 
@@ -113,50 +163,46 @@ Plan in `docs/week1_month6.md`:
 data/raw/access_logs/ → log_reader.py (lazy iteration, errors="ignore")
     → log_parser.py (regex, re.compile, guard clauses, field validation, stats)
     → log_analysis.py (validation orchestrator, range + list validation, DataFrame)
-    → run_pipeline.py (orchestrates ingestion → processing → analysis)
+    → get_metric_thresholds() (response_size_bucket column)
+    → run_pipeline.py (orchestrates ingestion → processing → analysis → thresholds)
+    → run_report_pipeline.py (method count, status count, size dist, correlation)
+    → output/plots/
 
 TEMPORARILY DISABLED:
-    → run_report_pipeline.py (needs column name updates — Sprint 11)
-    → feature_engineering.py (complete redesign — Month 6 Week 2)
+    → feature_engineering.py (complete redesign — Sprint 12)
     → run_features_pipeline.py (depends on feature_engineering)
     → run_statistical_pipeline.py (depends on features dataset)
 ```
 
 Orchestrated by `main.py`. Configuration loaded once, passed to
-all pipelines. Working on branch `migration/real-logs`.
+all pipelines. Working on main branch.
 
 ---
 
 ## Module Status
 
-### Complete (Sprint 10)
+### Complete and Active
 
-- `log_reader.py` — v4, single function, config-driven path
-- `log_parser.py` — v5, regex-based CLF parsing
-- `log_analysis.py` — v7, range validation, deprecated functions removed
-- `config.yaml` — new keys, old keys pending cleanup
-- `config_loader.py` — v4, new required keys
-- `run_pipeline.py` — v8, service parameter removed
+- `log_reader.py` — v4
+- `log_parser.py` — v5
+- `log_analysis.py` — v8 (get_metric_thresholds updated)
+- `config.yaml` — clean, all deprecated keys removed
+- `config_loader.py` — v5 (metric_thresholds in required_keys)
+- `run_pipeline.py` — v9 (get_metric_thresholds re-enabled)
+- `run_reporting_pipeline.py` — v4 (CLF columns)
+- `log_visualizer.py` — v2 (unchanged, generic)
+- `main.py` — v7 (reporting re-enabled)
+- `Dockerfile` — v2 (volume mounts, no generator)
 
-### Needs Updates (Sprint 11)
-
-- `run_reporting_pipeline.py` — column name arguments
-- `main.py` — re-enable reporting, update docs
-- `__main__` blocks — real data examples
-- `config.yaml` — remove deprecated keys
-
-### Deferred to Month 6 Weeks 2–3
+### Needs Redesign (Sprint 12)
 
 - `feature_engineering.py` — complete redesign for CLF domain
 - `run_features_pipeline.py` — depends on new features
+
+### Needs Updates (Sprint 13)
+
 - `run_statistical_pipeline.py` — depends on new feature dataset
 - `log_statistical_analysis.py` — stratify column may change
-
-### Deprecated
-
-- `log_generator.py` — removed from active pipeline
-- `load_service_logs()` / `load_all_logs(services)` — replaced
-- Hardcoded analysis functions (7 functions) — removed
 
 ---
 
@@ -188,10 +234,13 @@ expected_values:
   http_response:
     - 100
     - 599
-```
 
-Deprecated keys still present: `metric_thresholds`,
-`feature_thresholds`, `hour_of_day_weights`. Cleanup in Sprint 11.
+metric_thresholds:
+  response_size:
+    low: 669
+    normal: 9200
+    high: max
+```
 
 ---
 
@@ -201,59 +250,54 @@ Deprecated keys still present: `metric_thresholds`,
 - **Parser output:** 1,569,890 (8 skipped — malformed)
 - **Analysis output:** 1,569,887 (3 filtered — 2 binary data,
   1 missing endpoint)
-- **Final DataFrame:** 1,569,887 rows × 9 columns
+- **Final DataFrame:** 1,569,887 rows × 9 columns + response_size_bucket
 - **Key findings:**
-  - ~1,400 lines missing protocol (None/NaN in DataFrame)
+  - 89% status 200, right-skewed response_size
+  - ~1,400 lines missing protocol (NaN in DataFrame)
   - 10 lines with response_size as `-` (converted to 0)
-  - 2 lines with binary request data pass parser, caught by
-    analysis (method not in expected values, status 400)
+  - Pearson correlation ~0 (class imbalance, categorical data)
   - Hurricane Erin gap: no data 01/Aug–03/Aug 1995
 
 ---
 
-## Key Concepts Learned (Month 5)
+## Key Concepts Learned (Month 6 Week 1)
 
-### Sprint 9
-- Common Log Format (CLF) field structure
-- re.match with capture groups for log parsing
-- Data quality exploration with grep, awk, wc
-- Mixed delimiters require regex over str.split()
-- re.compile() for performance with large files
-
-### Sprint 10
-- Git branching: create, push, work on branch
-- `errors="ignore"` on file open — drops invalid bytes, not lines
-- `re.compile()` — compile once, match many
-- `zip()` for parallel iteration — cleaner than index counters
-- `HTTP/` prefix check for protocol detection in ambiguous
-  request lines
-- `strptime` with `%z` for timezone-aware datetime parsing
-- `None` in dict → `NaN` in DataFrame automatically
-- `if/elif` mutual exclusivity for multi-path validation
-- Range validation vs list validation in same function
-- Format vs content validation across parser and analysis layers
-- Refactoring is cognitively harder than writing from scratch
+### Sprint 11
+- countplot treats data as categorical regardless of dtype
+- right-skewed distribution: mean > median, long tail to the right
+- Pearson correlation fails with: low variance, categorical
+  relationships, class imbalance
+- describe() on categorical-as-int columns produces meaningless
+  statistics
+- Dynamic bounds in pd.cut(): min() for lower, "max" convention
+  for upper
+- Docker volume mounts: two mounts (input + output) in same run
+- mkdir -p before docker run to avoid root ownership
+- MPLCONFIGDIR for matplotlib cache in non-root containers
+- GitHub PR workflow: create, review diff, merge, delete branch
 
 ---
 
 ## Documentation Status
 
-- `docs/log_reader_design.md` — v4 (updated Sprint 10)
-- `docs/log_parser_design.md` — v5 (updated Sprint 10)
-- `docs/log_analysis_design.md` — v7 (updated Sprint 10)
-- `docs/run_pipeline_design.md` — v8 (updated Sprint 10)
-- `docs/config_loader_design.md` — v4 (updated Sprint 10)
-- `docs/main_design.md` — v6 (update deferred to Sprint 11)
+- `docs/log_reader_design.md` — v4
+- `docs/log_parser_design.md` — v5
+- `docs/log_analysis_design.md` — v8 (updated Sprint 11)
+- `docs/run_pipeline_design.md` — v9 (updated Sprint 11)
+- `docs/config_loader_design.md` — v5 (updated Sprint 11)
+- `docs/main_design.md` — v7 (updated Sprint 11)
 - `docs/log_visualizer_design.md` — v2 (no changes needed)
-- `docs/run_reporting_pipeline_design.md` — v3 (update Sprint 11)
-- `docs/run_features_pipeline_design.md` — v1 (redesign Month 6 Week 2)
-- `docs/feature_engineering_design.md` — v2 (redesign Month 6 Week 2)
-- `docs/run_statistical_pipeline_design.md` — v1 (update Month 6 Week 3)
+- `docs/run_reporting_pipeline_design.md` — v4 (updated Sprint 11)
+- `docs/docker_design.md` — v2 (updated Sprint 11)
+- `docs/run_features_pipeline_design.md` — v1 (redesign Sprint 12)
+- `docs/feature_engineering_design.md` — v2 (redesign Sprint 12)
+- `docs/run_statistical_pipeline_design.md` — v1 (update Sprint 13)
 - `docs/log_statistical_analysis_design.md` — v2 (no changes needed)
+- `docs/analysis_findings_month6.md` — new (Sprint 11)
 - `docs/migration_plan.md` — complete
-- `docs/migration_plan/format_analysis.md` — complete
+- `docs/format_analysis.md` — complete
 - `docs/statistical_analysis.md` — complete (Month 4)
-- `docs/tech_debt.md` — updated Sprint 10
+- `docs/tech_debt.md` — needs test suite entry
 - `docs/bugs.md` through `docs/bugs5.md` — all P1/P2 complete
 
 ---
@@ -268,7 +312,8 @@ Deprecated keys still present: `metric_thresholds`,
 - OOP: introduce when state + behavior need to live together (Month 10+)
 - Format vs content: parser validates format, analysis validates content
 - When new tech debt appears in design docs, add it to tech_debt.md
+- __main__ blocks removed — test suite is tech debt item
 - Ubuntu native install
 - Conda env: ML
 - Neovim, Pyright, Git/GitHub, Docker
-- Working on branch `migration/real-logs` — merge to main in Sprint 11
+- Working on main branch
