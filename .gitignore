@@ -70,4 +70,4 @@ Thumbs.db
 # =========================
 reflexiones/
 config/secrets.yaml
-project_guidelines/
+project_guidelines/*

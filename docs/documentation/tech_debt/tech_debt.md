@@ -15,6 +15,32 @@ Each item includes context on why it was deferred and when it makes sense to imp
 
 ---
 
+## Testing
+
+---
+
+### 🟣 Add test suite for all pipeline modules
+
+**Current behavior**
+There are no automated tests. Module-level verification was
+previously done via `__main__` blocks, which have been removed
+during the CLF migration. The only verification path is running
+the full pipeline end-to-end via `main.py`.
+
+**Why it matters**
+Without isolated tests, changes to individual modules cannot be
+verified without running the entire pipeline. Bugs that affect a
+single function are harder to locate because end-to-end execution
+does not isolate which module failed. As the pipeline grows (feature
+engineering, statistical pipeline, cloud deployment), the risk of
+undetected regressions increases.
+
+**Target:** After Month 6 migration is complete — before Phase 2
+cloud work begins. The full pipeline should be stable on real data
+before writing tests against it.
+
+---
+
 ## Log Reader
 
 ---
